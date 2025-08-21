@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "569277147313",
+    "project_id": "cafe-3fb97",
+    "storage_bucket": "cafe-3fb97.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:569277147313:android:9de296b42e29edaeb85a90",
+        "android_client_info": {
+          "package_name": "com.deskgoo.cafe.deskgoo_cafe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoZxn-Aw5Xb-HpMmVWqnbQeh4rvnv7tHM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,16 @@
+.idea
+build/
+linux
+macos
+test
+web/
+windows
+.flutter-plugins-dependencies
+.metadata
+analysis_options.yaml
+deskgoo_cafe.iml
+pubspec.lock
+README.md
+
+
+
