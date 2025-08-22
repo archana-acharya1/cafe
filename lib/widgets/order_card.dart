@@ -257,4 +257,28 @@ class OrderCard extends StatelessWidget {
     // Preview & print the generated PDF
     await Printing.layoutPdf(onLayout: (format) async => pdf.save());
   }
+
+  pw.Widget dottedDivider() {
+    return pw.LayoutBuilder(
+      builder: (context, constraints) {
+        final dashWidth = 2.0;
+        final dashSpace = 2.0;
+        final totalWidth = constraints!.maxWidth;
+        final dashCount = (totalWidth / (dashWidth + dashSpace)).floor();
+
+        return pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: List.generate(dashCount, (_) {
+            return pw.SizedBox(
+              width: dashWidth,
+              height: 1,
+              child: pw.DecoratedBox(
+                decoration: const pw.BoxDecoration(color: PdfColors.black),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
 }
