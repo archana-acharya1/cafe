@@ -93,4 +93,168 @@ class OrderCard extends StatelessWidget {
       onLayout: (format) async => pdf.save(),
     );
   }
+
+  Future<void> printPdf() async {
+    final pdf = pw.Document(version: PdfVersion.pdf_1_5, compress: true);
+    final font = await PdfGoogleFonts.nunitoExtraLight();
+    final customPageFormat = PdfPageFormat(
+      58 * PdfPageFormat.mm, // Custom width (e.g., 80mm)
+      double.infinity, // Custom height (e.g., 200mm)
+      marginAll: 1 * PdfPageFormat.mm, // Optional: uniform margins
+    );
+    final items = [
+      {'description': 'Chicken momo (full plate)', 'qty': 1, 'subtotal': 180.00},
+      {'description': 'Veg Chowmein', 'qty': 2, 'subtotal': 240.00},
+      {'description': 'Cold Drink', 'qty': 3, 'subtotal': 150.00},
+    ];
+
+    pdf.addPage(
+      pw.Page(
+        // pageFormat: PdfPageFormat.a4,
+        pageFormat: customPageFormat,
+        build: (pw.Context context) {
+          return
+            pw.SizedBox(
+              width: 58 * PdfPageFormat.mm,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Align(
+                    alignment: pw.Alignment.center,
+                    child: pw.Text('Deskgoo Cafe',
+                        style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                  ),
+                  pw.SizedBox(height: 10),
+                  pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Tax ID:', style: pw.TextStyle(fontSize: 8)),
+                        pw.Text('45678987', style: pw.TextStyle(fontSize: 8)),
+                      ]),
+                  pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Invoice:', style: pw.TextStyle(fontSize: 8)),
+                        pw.Text('SRN #123563', style: pw.TextStyle(fontSize: 8)),
+                      ]),
+                  pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Invoice Date:', style: pw.TextStyle(fontSize: 8)),
+                        pw.Text('${DateTime.now().toString().split('.')[0]}', style: pw.TextStyle(fontSize: 8)),
+                      ]),
+                  pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Customer:', style: pw.TextStyle(fontSize: 8)),
+                        pw.Text('Archana Acharya', style: pw.TextStyle(fontSize: 8)),
+                      ]),
+                  pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Table:', style: pw.TextStyle(fontSize: 8)),
+                        pw.Text('r1 (roof-top)', style: pw.TextStyle(fontSize: 8)),
+                      ]),
+                  pw.SizedBox(height: 5),
+
+                  pw.SizedBox(height: 5),
+                  dottedDivider(),
+                  // pw.Divider(),
+                  pw.SizedBox(height: 5),
+
+                  // 🔹 Heading Row
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Expanded(
+                          flex: 5,
+                          child: pw.Text('Description',
+                              style: pw.TextStyle(
+                                  fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                      pw.Expanded(
+                          flex: 2,
+                          child: pw.Text('Qty',
+                              textAlign: pw.TextAlign.center,
+                              style: pw.TextStyle(
+                                  fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                      pw.Expanded(
+                          flex: 3,
+                          child: pw.Text('Subtotal',
+                              textAlign: pw.TextAlign.right,
+                              style: pw.TextStyle(
+                                  fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                    ],
+                  ),
+
+                  pw.SizedBox(height: 5),
+                  dottedDivider(),
+                  // pw.Divider(),
+                  pw.SizedBox(height: 10),
+
+                  // 🔹 Item Rows (loop through list)
+                  ...items.map((item) => pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Expanded(
+                          flex: 5,
+                          child: pw.Text(item['description'] as String,
+                              style: pw.TextStyle(fontSize: 8))),
+                      pw.Expanded(
+                          flex: 2,
+                          child: pw.Text('${item['qty']}',
+                              textAlign: pw.TextAlign.center,
+                              style: pw.TextStyle(fontSize: 8))),
+                      pw.Expanded(
+                          flex: 3,
+                          child: pw.Text('${item['subtotal']}',
+                              textAlign: pw.TextAlign.right,
+                              style: pw.TextStyle(fontSize: 8))),
+                    ],
+                  )),
+                  pw.SizedBox(height: 10),
+                  dottedDivider(),
+                  // pw.Divider(),
+                  pw.SizedBox(height: 10),
+                  // 🔹 Totals
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total VAT:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('74.1', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total Discount:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('0.00', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('644.1', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 10),
+                  dottedDivider(),
+                  // pw.Divider(),
+                  pw.SizedBox(height: 10),
+                  pw.Align(
+                    alignment: pw.Alignment.center,
+                    child:
+                    pw.Text('Thank you for visiting!',
+                        style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic)),
+                  ),
+                ],
+              ),
+            );
+        },
+      ),
+    );
+
+    // Preview & print the generated PDF
+    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+  }
 }
