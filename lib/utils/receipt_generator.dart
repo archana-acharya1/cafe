@@ -12,7 +12,6 @@ class ReceiptGenerator {
 
     pdf.addPage(
       pw.Page(
-        // pageFormat: PdfPageFormat(58 * PdfPageFormat.mm, double.infinity, marginAll: 5),
         pageFormat: customPage,
         build: (pw.Context context) {
           return pw.Column(
