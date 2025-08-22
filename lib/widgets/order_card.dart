@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/order_model.dart';
@@ -34,7 +35,6 @@ class OrderCard extends StatelessWidget {
                   },
                 ),
 
-                // Print Button
                 IconButton(
                   icon: const Icon(Icons.print),
                   onPressed: () async {
@@ -98,9 +98,9 @@ class OrderCard extends StatelessWidget {
     final pdf = pw.Document(version: PdfVersion.pdf_1_5, compress: true);
     final font = await PdfGoogleFonts.nunitoExtraLight();
     final customPageFormat = PdfPageFormat(
-      58 * PdfPageFormat.mm, // Custom width (e.g., 80mm)
-      double.infinity, // Custom height (e.g., 200mm)
-      marginAll: 1 * PdfPageFormat.mm, // Optional: uniform margins
+      58 * PdfPageFormat.mm,
+      double.infinity,
+      marginAll: 1 * PdfPageFormat.mm,
     );
     final items = [
       {'description': 'Chicken momo (full plate)', 'qty': 1, 'subtotal': 180.00},
@@ -110,7 +110,6 @@ class OrderCard extends StatelessWidget {
 
     pdf.addPage(
       pw.Page(
-        // pageFormat: PdfPageFormat.a4,
         pageFormat: customPageFormat,
         build: (pw.Context context) {
           return
@@ -159,10 +158,8 @@ class OrderCard extends StatelessWidget {
 
                   pw.SizedBox(height: 5),
                   dottedDivider(),
-                  // pw.Divider(),
                   pw.SizedBox(height: 5),
 
-                  // 🔹 Heading Row
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
@@ -188,10 +185,8 @@ class OrderCard extends StatelessWidget {
 
                   pw.SizedBox(height: 5),
                   dottedDivider(),
-                  // pw.Divider(),
                   pw.SizedBox(height: 10),
 
-                  // 🔹 Item Rows (loop through list)
                   ...items.map((item) => pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
@@ -213,9 +208,8 @@ class OrderCard extends StatelessWidget {
                   )),
                   pw.SizedBox(height: 10),
                   dottedDivider(),
-                  // pw.Divider(),
                   pw.SizedBox(height: 10),
-                  // 🔹 Totals
+
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
