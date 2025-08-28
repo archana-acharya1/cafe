@@ -11,33 +11,42 @@ class TableScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     var tableBox = Hive.box<TableModel>('tables');
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("Tables")),
-      body: ValueListenableBuilder(
-        valueListenable: tableBox.listenable(),
-        builder: (context, Box<TableModel> box, _) {
-          if (box.isEmpty) {
-            return const Center(child: Text("No tables added yet."));
-          }
-          return ListView.builder(
-            itemCount: box.length,
-            itemBuilder: (context, index) {
-              final table = box.getAt(index)!;
-              return ListTile(
-                title: Text(table.name),
-                subtitle: Text("Area: ${table.area}"),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => table.delete(),
-                ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => _showAddTableDialog(context),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: ((didPop) {
+        if (didPop){
+          return;
+        }
+        Navigator.pop(context);
+      }),
+      child: Scaffold(
+        appBar: AppBar(title: const Text("Tables")),
+        body: ValueListenableBuilder(
+          valueListenable: tableBox.listenable(),
+          builder: (context, Box<TableModel> box, _) {
+            if (box.isEmpty) {
+              return const Center(child: Text("No tables added yet."));
+            }
+            return ListView.builder(
+              itemCount: box.length,
+              itemBuilder: (context, index) {
+                final table = box.getAt(index)!;
+                return ListTile(
+                  title: Text(table.name),
+                  subtitle: Text("Area: ${table.area}"),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => table.delete(),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.add),
+          onPressed: () => _showAddTableDialog(context),
+        ),
       ),
     );
   }

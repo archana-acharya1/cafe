@@ -29,6 +29,12 @@ class OrderModel extends HiveObject {
   @HiveField(7)
   String? customerName;
 
+  @HiveField(8)
+  double? discount;
+
+  @HiveField(9)
+  int? taxId;
+
   OrderModel({
     required this.tableName,
     required this.area,
@@ -38,5 +44,7 @@ class OrderModel extends HiveObject {
     required this.dueAmount,
     required this.paymentStatus,
     this.customerName,
+    this.discount,
+    this.taxId,
   });
 }

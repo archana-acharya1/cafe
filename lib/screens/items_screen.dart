@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/item_model.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ItemsScreen extends StatefulWidget {
   const ItemsScreen({super.key});
@@ -11,10 +14,12 @@ class ItemsScreen extends StatefulWidget {
 
 class _ItemsScreenState extends State<ItemsScreen> {
   final Box<ItemModel> itemsBox = Hive.box<ItemModel>('items');
+  final ImagePicker _picker = ImagePicker();
 
   void _addOrEditItem({ItemModel? item}) {
     final nameController = TextEditingController(text: item?.name ?? '');
     bool isAvailable = item?.isAvailable ?? true;
+    String? imagePath = item?.imagePath;
 
     final List<_UnitRow> unitRows = (item?.units ?? [UnitOption(unitName: '', price: 0)])
         .map((u) => _UnitRow(
@@ -44,6 +49,14 @@ class _ItemsScreenState extends State<ItemsScreen> {
                   unitRows.removeAt(index);
                 }
               });
+            }
+            Future<void> pickImage() async {
+              final picked = await _picker.pickImage(source: ImageSource.gallery);
+              if (picked != null) {
+                setModalState(() {
+                  imagePath = picked.path;
+                });
+              }
             }
 
             return AlertDialog(
@@ -122,6 +135,28 @@ class _ItemsScreenState extends State<ItemsScreen> {
                         ),
                       );
                     }),
+
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Item Image",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                            icon: const Icon(Icons.image),
+                            onPressed: pickImage,
+                        ),
+                      ],
+                    ),
+                    if (imagePath != null)
+                      Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.file(File(imagePath!),
+                              height: 100, fit:BoxFit.cover),
+                      ),
                   ],
                 ),
               ),
@@ -159,12 +194,15 @@ class _ItemsScreenState extends State<ItemsScreen> {
                         name: name,
                         units: units,
                         isAvailable: isAvailable,
+                        imagePath: imagePath,
                       ));
                     } else {
                       item
                         ..name = name
                         ..units = units
-                        ..isAvailable = isAvailable;
+                        ..isAvailable = isAvailable
+                        ..imagePath = imagePath;
+
                       item.save();
                     }
 
@@ -186,51 +224,107 @@ class _ItemsScreenState extends State<ItemsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Items")),
-      body: ValueListenableBuilder(
-        valueListenable: itemsBox.listenable(),
-        builder: (context, Box<ItemModel> box, _) {
-          if (box.isEmpty) {
-            return const Center(child: Text("No items added yet"));
-          }
-          return ListView.builder(
-            itemCount: box.length,
-            itemBuilder: (context, index) {
-              final item = box.getAt(index)!;
-              final unitsLabel = item.units
-                  .map((u) => "${u.unitName}: ${u.price.toStringAsFixed(2)}")
-                  .join("  •  ");
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
 
-              return Card(
-                child: ListTile(
-                  title: Text(item.name),
-                  subtitle: Text(
-                    "${item.isAvailable ? 'Available' : 'Not Available'}\n$unitsLabel",
-                  ),
-                  isThreeLine: true,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _addOrEditItem(item: item),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deleteItem(item),
-                      ),
-                    ],
-                  ),
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (_) {
+            return AlertDialog(
+              elevation: 10,
+              backgroundColor: Colors.white,
+              title: const Text(
+                'Exit',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  color: Colors.red,
                 ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _addOrEditItem(),
-        child: const Icon(Icons.add),
+              ),
+              content: const Text(
+                'Are you sure you want to exit?',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("No"),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  child: const Text("Yes"),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldExit == true) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text("Items")),
+        body: ValueListenableBuilder(
+          valueListenable: itemsBox.listenable(),
+          builder: (context, Box<ItemModel> box, _) {
+            if (box.isEmpty) {
+              return const Center(child: Text("No items added yet"));
+            }
+            return ListView.builder(
+              itemCount: box.length,
+              itemBuilder: (context, index) {
+                final item = box.getAt(index)!;
+                final unitsLabel = item.units
+                    .map((u) =>
+                "${u.unitName}: ${u.price.toStringAsFixed(2)}")
+                    .join("  •  ");
+
+                return Card(
+                  child: ListTile(
+                    leading: item.imagePath !=null
+                    ?Image.file(
+                      File(item.imagePath!),
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    )
+                    :const Icon(Icons.fastfood),
+                    title: Text(item.name),
+                    subtitle: Text(
+                      "${item.isAvailable ? 'Available' : 'Not Available'}\n$unitsLabel",
+                    ),
+                    isThreeLine: true,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon:
+                          const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _addOrEditItem(item: item),
+                        ),
+                        IconButton(
+                          icon:
+                          const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteItem(item),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _addOrEditItem(),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -245,3 +339,4 @@ class _UnitRow {
     required this.priceController,
   });
 }
+

@@ -8,18 +8,27 @@ class OrdersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Orders")),
-      body: ValueListenableBuilder(
-        valueListenable: Hive.box<OrderModel>('orders').listenable(),
-        builder: (context, Box<OrderModel> box, _) {
-          if (box.values.isEmpty) {
-            return const Center(child: Text("No orders yet"));
-          }
-          return ListView(
-            children: box.values.map((order) => OrderCard(order: order)).toList(),
-          );
-        },
+    return PopScope(
+      canPop: false,
+      onPopInvoked: ((didPop) {
+        if (didPop){
+          return;
+        }
+        Navigator.pop(context);
+      }),
+      child: Scaffold(
+        appBar: AppBar(title: const Text("Orders")),
+        body: ValueListenableBuilder(
+          valueListenable: Hive.box<OrderModel>('orders').listenable(),
+          builder: (context, Box<OrderModel> box, _) {
+            if (box.values.isEmpty) {
+              return const Center(child: Text("No orders yet"));
+            }
+            return ListView(
+              children: box.values.map((order) => OrderCard(order: order)).toList(),
+            );
+          },
+        ),
       ),
     );
   }

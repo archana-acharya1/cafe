@@ -16,10 +16,14 @@ class OrderItem extends HiveObject {
   @HiveField(3)
   int quantity;
 
+  @HiveField(4)
+  String? imagePath;
+
   OrderItem({
     required this.itemName,
     required this.unitName,
     required this.price,
     required this.quantity,
+    this.imagePath,
   });
 }

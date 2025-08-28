@@ -8,7 +8,10 @@ class ReceiptGenerator {
   static Future<Uint8List> generateReceipt(OrderModel order) async {
     final pdf = pw.Document();
 
-    final customPage = PdfPageFormat(10 * PdfPageFormat.mm, 50 * PdfPageFormat.mm, marginAll: 1.25 * PdfPageFormat.mm);
+    final customPage = PdfPageFormat(
+        20 * PdfPageFormat.mm,
+        100 * PdfPageFormat.mm,
+        marginAll: 2.5 * PdfPageFormat.mm);
 
     pdf.addPage(
       pw.Page(

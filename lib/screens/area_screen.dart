@@ -10,32 +10,41 @@ class AreaScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     var box = Hive.box<AreaModel>('areas');
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("Areas")),
-      body: ValueListenableBuilder(
-        valueListenable: box.listenable(),
-        builder: (context, Box<AreaModel> box, _) {
-          if (box.isEmpty) {
-            return const Center(child: Text("No areas added yet."));
-          }
-          return ListView.builder(
-            itemCount: box.length,
-            itemBuilder: (context, index) {
-              final area = box.getAt(index)!;
-              return ListTile(
-                title: Text(area.name),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => area.delete(),
-                ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => _showAddAreaDialog(context),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: ((didPop) { 
+        if (didPop){
+          return;
+        }
+        Navigator.pop(context);
+      }),
+      child: Scaffold(
+        appBar: AppBar(title: const Text("Areas")),
+        body: ValueListenableBuilder(
+          valueListenable: box.listenable(),
+          builder: (context, Box<AreaModel> box, _) {
+            if (box.isEmpty) {
+              return const Center(child: Text("No areas added yet."));
+            }
+            return ListView.builder(
+              itemCount: box.length,
+              itemBuilder: (context, index) {
+                final area = box.getAt(index)!;
+                return ListTile(
+                  title: Text(area.name),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => area.delete(),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.add),
+          onPressed: () => _showAddAreaDialog(context),
+        ),
       ),
     );
   }

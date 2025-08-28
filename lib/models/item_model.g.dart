@@ -20,19 +20,22 @@ class ItemModelAdapter extends TypeAdapter<ItemModel> {
       name: fields[0] as String,
       units: (fields[1] as List).cast<UnitOption>(),
       isAvailable: fields[2] as bool,
+      imagePath: fields[3] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ItemModel obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
       ..write(obj.units)
       ..writeByte(2)
-      ..write(obj.isAvailable);
+      ..write(obj.isAvailable)
+      ..writeByte(3)
+      ..write(obj.imagePath);
   }
 
   @override
