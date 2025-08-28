@@ -1,4 +1,4 @@
-import 'package:deskgoo_cafe/models/order_item.dart';
+// import 'package:deskgoo_cafe/models/order_item.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -7,6 +7,8 @@ import 'models/item_model.dart';
 import 'models/area_model.dart';
 import 'models/table_model.dart';
 import 'models/order_model.dart';
+import 'models/order_item.dart';
+
 
 import 'screens/login_page.dart';
 
@@ -47,3 +49,5 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+

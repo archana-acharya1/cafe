@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dashboard.dart';
-import '../models/user_model.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,7 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  void loginUser() async {
+  Future<void> loginUser() async {
     String username = emailController.text.trim();
     String password = passwordController.text.trim();
 
@@ -25,26 +25,32 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    var userBox = Hive.box<UserModel>('users');
-
-    for (var u in userBox.values) {
-      print('User: ${u.username}, Pass: ${u.password}');
-    }
-
-    final userFound = userBox.values.any(
-          (user) =>
-      user.username.toLowerCase().trim() == username.toLowerCase().trim() &&
-          user.password.trim() == password.trim(),
-    );
-
-    if (userFound) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Dashboard()),
+    try {
+      final response = await http.post(
+        Uri.parse("http://202.51.3.168:5006/api/v1/auth/login"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "username": username,
+          "password": password,
+        }),
       );
-    } else {
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Dashboard()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid username or password")),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid username or password")),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }

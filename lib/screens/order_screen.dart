@@ -1,4 +1,4 @@
-import 'package:deskgoo_cafe/screens/orders_screen.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -7,6 +7,7 @@ import '../models/order_item.dart';
 import '../models/order_model.dart';
 import '../models/item_model.dart';
 import '../models/table_model.dart';
+import '../screens/orders_screen.dart';
 
 class OrderScreen extends StatefulWidget {
   const OrderScreen({super.key});
@@ -41,8 +42,8 @@ class _OrderScreenState extends State<OrderScreen> {
     if (unit == null) return;
 
     setState(() {
-      final idx = orderItems.indexWhere((o) =>
-      o.itemName == item.name && o.unitName == unit.unitName);
+      final idx = orderItems.indexWhere(
+              (o) => o.itemName == item.name && o.unitName == unit.unitName);
       if (idx != -1) {
         orderItems[idx].quantity += unit.qty;
       } else {
@@ -51,6 +52,7 @@ class _OrderScreenState extends State<OrderScreen> {
           unitName: unit.unitName,
           price: unit.price,
           quantity: unit.qty,
+          imagePath: item.imagePath,
         ));
       }
     });
@@ -86,7 +88,6 @@ class _OrderScreenState extends State<OrderScreen> {
         builder: (context) => const OrdersScreen(),
       ),
     );
-
   }
 
   @override
@@ -94,137 +95,162 @@ class _OrderScreenState extends State<OrderScreen> {
     final availableItems =
     itemBox.values.where((i) => i.isAvailable && i.units.isNotEmpty).toList();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("New Order")),
-      body: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          children: [
-            // Table selection
-            DropdownButtonFormField<String>(
-              hint: const Text("Select Table"),
-              items: tableBox.values.map((t) {
-                return DropdownMenuItem(
-                  value: t.name,
-                  child: Text("${t.name} (${t.area})"),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedTable = value;
-                  selectedArea =
-                      tableBox.values.firstWhere((t) => t.name == value).area;
-                });
-              },
-            ),
-            const SizedBox(height: 10),
-
-            Expanded(
-              child: ListView.builder(
-                itemCount: availableItems.length,
-                itemBuilder: (context, index) {
-                  final item = availableItems[index];
-                  final units = item.units
-                      .map((u) => "${u.unitName} (${u.price.toStringAsFixed(2)})")
-                      .join(" • ");
-                  return Card(
-                    child: ListTile(
-                      title: Text(item.name),
-                      subtitle: Text(units),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () => _chooseUnitAndAdd(item),
-                      ),
-                    ),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: ((didPop) {
+        if (didPop) {
+          return;
+        }
+        Navigator.pop(context);
+      }),
+      child: Scaffold(
+        appBar: AppBar(title: const Text("New Order")),
+        body: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            children: [
+              // Table selection
+              DropdownButtonFormField<String>(
+                hint: const Text("Select Table"),
+                items: tableBox.values.map((t) {
+                  return DropdownMenuItem(
+                    value: t.name,
+                    child: Text("${t.name} (${t.area})"),
                   );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedTable = value;
+                    selectedArea =
+                        tableBox.values.firstWhere((t) => t.name == value).area;
+                  });
                 },
               ),
-            ),
+              const SizedBox(height: 10),
 
-            if (orderItems.isNotEmpty) ...[
+              // Available items list
+              Expanded(
+                child: ListView.builder(
+                  itemCount: availableItems.length,
+                  itemBuilder: (context, index) {
+                    final item = availableItems[index];
+                    final units = item.units
+                        .map((u) => "${u.unitName} (${u.price.toStringAsFixed(2)})")
+                        .join(" • ");
+                    return Card(
+                      child: ListTile(
+                        leading: item.imagePath != null
+                            ? Image.file(
+                          File(item.imagePath!),
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        )
+                            : const Icon(Icons.fastfood),
+                        title: Text(item.name),
+                        subtitle: Text(units),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () => _chooseUnitAndAdd(item),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Selected order items list
+              if (orderItems.isNotEmpty) ...[
+                const Divider(),
+                ...orderItems.map((o) => Card(
+                  child: ListTile(
+                    leading: o.imagePath != null
+                        ? Image.file(
+                      File(o.imagePath!),
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    )
+                        : const Icon(Icons.fastfood),
+                    title: Text("${o.itemName} (${o.unitName})"),
+                    subtitle: Text(
+                        "Qty: ${o.quantity}  |  Price: ${o.price.toStringAsFixed(2)}"),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: () {
+                            setState(() {
+                              if (o.quantity > 1) {
+                                o.quantity--;
+                              } else {
+                                orderItems.remove(o);
+                              }
+                            });
+                          },
+                        ),
+                        Text("${o.quantity}"),
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () {
+                            setState(() {
+                              o.quantity++;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                )),
+                const SizedBox(height: 8),
+                Text(
+                  "Total: ${total.toStringAsFixed(2)}",
+                  style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+
               const Divider(),
-              ...orderItems.map((o) => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text("${o.itemName} (${o.unitName})"),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove),
-                        onPressed: () {
-                          setState(() {
-                            if (o.quantity > 1) {
-                              o.quantity--;
-                            } else {
-                              orderItems.remove(o);
-                            }
-                          });
-                        },
-                      ),
-                      Text("${o.quantity}"),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () {
-                          setState(() {
-                            o.quantity++;
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      Text("= ${(o.price * o.quantity).toStringAsFixed(2)}"),
-                    ],
-                  ),
-                ],
-              )),
-              const SizedBox(height: 8),
-              Text(
-                "Total: ${total.toStringAsFixed(2)}",
-                style:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+              TextFormField(
+                keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: "Paid Amount"),
+                onChanged: (val) {
+                  setState(() {
+                    paidAmount = double.tryParse(val) ?? 0;
+                  });
+                },
+              ),
+              const SizedBox(height: 5),
+              DropdownButtonFormField<String>(
+                value: paymentStatus,
+                items: const ["Paid", "Due", "Credit"]
+                    .map((status) => DropdownMenuItem(
+                  value: status,
+                  child: Text(status),
+                ))
+                    .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    paymentStatus = val!;
+                  });
+                },
+              ),
+              if (paymentStatus == "Credit")
+                TextFormField(
+                  decoration: const InputDecoration(labelText: "Customer Name"),
+                  onChanged: (val) => setState(() => customerName = val),
+                ),
+
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _placeOrder,
+                child: const Text("Place Order"),
               ),
             ],
-
-            const Divider(),
-
-            TextFormField(
-              keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: "Paid Amount"),
-              onChanged: (val) {
-                setState(() {
-                  paidAmount = double.tryParse(val) ?? 0;
-                });
-              },
-            ),
-            const SizedBox(height: 5),
-            DropdownButtonFormField<String>(
-              value: paymentStatus,
-              items: const ["Paid", "Due", "Credit"]
-                  .map((status) => DropdownMenuItem(
-                value: status,
-                child: Text(status),
-              ))
-                  .toList(),
-              onChanged: (val) {
-                setState(() {
-                  paymentStatus = val!;
-                });
-              },
-            ),
-            if (paymentStatus == "Credit")
-              TextFormField(
-                decoration: const InputDecoration(labelText: "Customer Name"),
-                onChanged: (val) => setState(() => customerName = val),
-              ),
-
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _placeOrder,
-              child: const Text("Place Order"),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -289,7 +315,9 @@ class _SelectUnitDialogState extends State<_SelectUnitDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel")),
         ElevatedButton(
           onPressed: selected == null
               ? null

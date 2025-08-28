@@ -13,10 +13,14 @@ class ItemModel extends HiveObject {
   @HiveField(2)
   bool isAvailable;
 
+  @HiveField(3)
+  String? imagePath;
+
   ItemModel({
     required this.name,
     required this.units,
     required this.isAvailable,
+    this.imagePath,
   });
 }
 
