@@ -7,5 +7,11 @@ class AreaModel extends HiveObject {
   @HiveField(0)
   String name;
 
-  AreaModel({required this.name});
+  @HiveField(1)
+  String? imagePath;
+
+  AreaModel({
+    required this.name,
+    this.imagePath,
+  });
 }

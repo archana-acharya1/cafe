@@ -10,8 +10,12 @@ class TableModel extends HiveObject {
   @HiveField(1)
   String area;
 
+  @HiveField(2)
+  String? imagePath;
+
   TableModel({
     required this.name,
     required this.area,
+    this.imagePath,
   });
 }
