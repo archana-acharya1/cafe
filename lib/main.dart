@@ -30,6 +30,7 @@ void main() async {
   await Hive.openBox<AreaModel>('areas');
   await Hive.openBox<TableModel>('tables');
   await Hive.openBox<OrderModel>('orders');
+  await Hive.openBox('settings');
 
   final userBox = Hive.box<UserModel>('users');
   if (userBox.isEmpty) {

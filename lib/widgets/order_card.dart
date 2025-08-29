@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/order_model.dart';
-import 'dart:math';
 
 class OrderCard extends StatelessWidget {
   final OrderModel order;
@@ -49,8 +49,13 @@ class OrderCard extends StatelessWidget {
   }
 
   String _generateInvoiceNumber() {
-    final random = Random();
-    return "SRN#${100000 + random.nextInt(900000)}";
+    final settingsBox = Hive.box('settings');
+    int lastInvoice = settingsBox.get('lastInvoiceNumber', defaultValue:1000);
+
+    int newInvoice = lastInvoice + 1;
+    settingsBox.put('lastInvoiceNumber', newInvoice);
+
+    return "SRN#$newInvoice";
   }
 
   Future<void> _printOrder(OrderModel order) async {
@@ -148,7 +153,6 @@ class OrderCard extends StatelessWidget {
                 dottedDivider(),
                 pw.SizedBox(height: 10),
 
-                // Summary
                 _rowText('Total VAT:', vatAmount.toStringAsFixed(2), bold: true),
                 _rowText('Total Discount:', discount.toStringAsFixed(2),
                     bold: true),

@@ -175,7 +175,6 @@ class _OrderScreenState extends State<OrderScreen> {
                 ),
               ),
 
-              // Selected order items list
               if (orderItems.isNotEmpty) ...[
                 const Divider(),
                 ...orderItems.map((o) => Card(
