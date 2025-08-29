@@ -1,3 +1,4 @@
+import 'package:deskgoo_cafe/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'area_screen.dart';
@@ -14,7 +15,7 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  String selectedMenu = 'Items';
+  String selectedMenu = 'Home';
 
   Future<void> _confirmLogout(BuildContext context) async {
     final shouldLogout = await showDialog<bool>(
@@ -59,6 +60,9 @@ class _DashboardState extends State<Dashboard> {
         return const OrderScreen();
       case 'Orders':
         return const OrdersScreen();
+      case 'Home':
+        return const HomeScreen();
+
       default:
         return const Center(child: Text('Welcome to Deskgoo Cafe!'));
     }
@@ -89,6 +93,7 @@ class _DashboardState extends State<Dashboard> {
                   style: TextStyle(color: Colors.white, fontSize: 24),
                 ),
               ),
+              drawerItem('Home', Icons.home),
               drawerItem('Items', Icons.fastfood),
               drawerItem('Areas', Icons.location_city),
               drawerItem('Tables', Icons.table_bar),

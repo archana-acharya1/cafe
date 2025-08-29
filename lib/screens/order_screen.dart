@@ -10,7 +10,8 @@ import '../models/table_model.dart';
 import '../screens/orders_screen.dart';
 
 class OrderScreen extends StatefulWidget {
-  const OrderScreen({super.key});
+  final String? initialTableName;
+  const OrderScreen({super.key, this.initialTableName});
 
   @override
   State<OrderScreen> createState() => _OrderScreenState();
@@ -33,6 +34,20 @@ class _OrderScreenState extends State<OrderScreen> {
 
   double get due => (total - paidAmount).clamp(0, double.infinity);
 
+  @override
+  void initState() {
+    super.initState();
+
+    if ( widget.initialTableName !=null) {
+      final table = tableBox.values.firstWhere(
+        (t) => t.name == widget.initialTableName,
+        orElse: () => tableBox.values.isNotEmpty ? tableBox.values.first : TableModel(name: "", area: "")
+      );
+      selectedTable = table.name;
+      selectedArea = table.area;
+    }
+  }
+
   void _chooseUnitAndAdd(ItemModel item) async {
     final unit = await showDialog<_ChosenUnit>(
       context: context,
@@ -43,7 +58,8 @@ class _OrderScreenState extends State<OrderScreen> {
 
     setState(() {
       final idx = orderItems.indexWhere(
-              (o) => o.itemName == item.name && o.unitName == unit.unitName);
+              (o) => o.itemName == item.name && o.unitName == unit.unitName,
+      );
       if (idx != -1) {
         orderItems[idx].quantity += unit.qty;
       } else {
@@ -109,8 +125,8 @@ class _OrderScreenState extends State<OrderScreen> {
           padding: const EdgeInsets.all(10),
           child: Column(
             children: [
-              // Table selection
               DropdownButtonFormField<String>(
+                value: selectedTable,
                 hint: const Text("Select Table"),
                 items: tableBox.values.map((t) {
                   return DropdownMenuItem(

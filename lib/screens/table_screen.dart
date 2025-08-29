@@ -28,33 +28,75 @@ class _TableScreenState extends State<TableScreen> {
           if (box.isEmpty) {
             return const Center(child: Text("No tables added yet."));
           }
-          return ListView.builder(
+          return GridView.builder(
+            padding: const EdgeInsets.all(12),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 200, // max width of each card
+              childAspectRatio: 0.8,   // width : height ratio
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
             itemCount: box.length,
             itemBuilder: (context, index) {
               final table = box.getAt(index)!;
-              return ListTile(
-                leading: table.imagePath != null
-                    ? Image.file(
-                  File(table.imagePath!),
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                )
-                    : const Icon(Icons.table_chart),
-                title: Text(table.name),
-                subtitle: Text("Area: ${table.area}"),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => _showAddOrEditTableDialog(context, table: table),
+              return Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: InkWell(
+                  onTap: () {},
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        table.imagePath != null
+                            ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            File(table.imagePath!),
+                            width: 90,
+                            height: 90,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : const Icon(Icons.table_chart, size: 60),
+                        const SizedBox(height: 6),
+                        Text(
+                          table.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Text(
+                          "Area: ${table.area}",
+                          style: const TextStyle(fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit,
+                                  color: Colors.blue, size: 20),
+                              onPressed: () => _showAddOrEditTableDialog(
+                                context,
+                                table: table,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete,
+                                  color: Colors.red, size: 20),
+                              onPressed: () => _deleteTable(table),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteTable(table),
-                    ),
-                  ],
+                  ),
                 ),
               );
             },
@@ -87,10 +129,31 @@ class _TableScreenState extends State<TableScreen> {
             }
           }
 
-          void removeImage() {
-            setModalState(() {
-              imagePath = null;
-            });
+          Future<void> confirmRemoveImage() async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text("Remove Image"),
+                content: const Text("Are you sure you want to remove this image?"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text("No"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    child: const Text("Yes"),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirm == true) {
+              setModalState(() {
+                imagePath = null;
+              });
+            }
           }
 
           return AlertDialog(
@@ -134,7 +197,7 @@ class _TableScreenState extends State<TableScreen> {
                           if (imagePath != null)
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: removeImage,
+                              onPressed: confirmRemoveImage, // 🔥 confirmation
                             ),
                         ],
                       ),
@@ -153,7 +216,10 @@ class _TableScreenState extends State<TableScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
               ElevatedButton(
                 onPressed: () {
                   final name = nameController.text.trim();
@@ -161,7 +227,8 @@ class _TableScreenState extends State<TableScreen> {
 
                   if (table == null) {
                     Hive.box<TableModel>('tables').add(
-                      TableModel(name: name, area: selectedArea!, imagePath: imagePath),
+                      TableModel(
+                          name: name, area: selectedArea!, imagePath: imagePath),
                     );
                   } else {
                     table

@@ -36,6 +36,12 @@ class _AreaScreenState extends State<AreaScreen> {
               }
             }
 
+            void removeImage() {
+              setModalState(() {
+                imagePath = null;
+              });
+            }
+
             return AlertDialog(
               title: Text(area == null ? 'Add Area' : 'Edit Area'),
               content: SingleChildScrollView(
@@ -55,9 +61,19 @@ class _AreaScreenState extends State<AreaScreen> {
                           "Area Image",
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.image),
-                          onPressed: pickImage,
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.image),
+                              onPressed: pickImage,
+                            ),
+                            if (imagePath != null)
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red),
+                                onPressed: removeImage,
+                              ),
+                          ],
                         ),
                       ],
                     ),
@@ -106,55 +122,107 @@ class _AreaScreenState extends State<AreaScreen> {
     );
   }
 
-  void _deleteArea(AreaModel area) {
-    area.delete();
+  Future<void> _deleteArea(AreaModel area) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete Area"),
+        content: const Text("Are you sure you want to delete this area?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("No"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      area.delete();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: ((didPop) {
+      onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         Navigator.pop(context);
-      }),
+      },
       child: Scaffold(
-        appBar: AppBar(title: const Text("Areas")),
+        appBar: AppBar(title: const Text("Add Area")),
         body: ValueListenableBuilder(
           valueListenable: areaBox.listenable(),
           builder: (context, Box<AreaModel> box, _) {
             if (box.isEmpty) {
               return const Center(child: Text("No areas added yet."));
             }
-            return ListView.builder(
+            return GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 250,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.8,
+              ),
               itemCount: box.length,
               itemBuilder: (context, index) {
                 final area = box.getAt(index)!;
                 return Card(
-                  child: ListTile(
-                    leading: area.imagePath != null
-                        ? Image.file(
-                      File(area.imagePath!),
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                    )
-                        : const Icon(Icons.map),
-                    title: Text(area.name),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon:
-                          const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _addOrEditArea(area: area),
-                        ),
-                        IconButton(
-                          icon:
-                          const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteArea(area),
-                        ),
-                      ],
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: InkWell(
+                    onTap: () {},
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          area.imagePath != null
+                              ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              File(area.imagePath!),
+                              width: 90,
+                              height: 90,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                              : const Icon(Icons.map, size: 60),
+                          const SizedBox(height: 6),
+                          Text(
+                            area.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit,
+                                    color: Colors.blue, size: 20),
+                                onPressed: () => _addOrEditArea(area: area),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red, size: 20),
+                                onPressed: () => _deleteArea(area),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
