@@ -38,6 +38,7 @@ class OrderModel extends HiveObject {
   @HiveField(10)
   DateTime createdAt;
 
+
   OrderModel({
     required this.tableName,
     required this.area,

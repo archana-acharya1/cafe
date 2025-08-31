@@ -40,8 +40,8 @@ class _OrderScreenState extends State<OrderScreen> {
 
     if ( widget.initialTableName !=null) {
       final table = tableBox.values.firstWhere(
-        (t) => t.name == widget.initialTableName,
-        orElse: () => tableBox.values.isNotEmpty ? tableBox.values.first : TableModel(name: "", area: "")
+              (t) => t.name == widget.initialTableName,
+          orElse: () => tableBox.values.isNotEmpty ? tableBox.values.first : TableModel(name: "", area: "")
       );
       selectedTable = table.name;
       selectedArea = table.area;
@@ -58,7 +58,7 @@ class _OrderScreenState extends State<OrderScreen> {
 
     setState(() {
       final idx = orderItems.indexWhere(
-              (o) => o.itemName == item.name && o.unitName == unit.unitName,
+            (o) => o.itemName == item.name && o.unitName == unit.unitName,
       );
       if (idx != -1) {
         orderItems[idx].quantity += unit.qty;

@@ -40,6 +40,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               return const Center(child: Text("No orders yet"));
             }
 
+            // Filter orders
             final orders = box.values.where((order) {
               if (fromDate != null && order.createdAt.isBefore(fromDate!)) {
                 return false;
@@ -49,8 +50,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
               }
               return true;
             }).toList()
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt)); // newest first
 
+            // Totals
             double total = orders.fold(0, (sum, o) => sum + o.totalAmount);
             double paid = orders
                 .where((o) => o.paymentStatus == "Paid")
