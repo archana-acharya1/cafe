@@ -35,6 +35,9 @@ class OrderModel extends HiveObject {
   @HiveField(9)
   int? taxId;
 
+  @HiveField(10)
+  DateTime createdAt;
+
   OrderModel({
     required this.tableName,
     required this.area,
@@ -46,5 +49,6 @@ class OrderModel extends HiveObject {
     this.customerName,
     this.discount,
     this.taxId,
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 }

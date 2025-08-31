@@ -557,6 +557,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  nepali_date_picker:
+    dependency: "direct main"
+    description:
+      name: nepali_date_picker
+      sha256: "6a3dcec1bf761aa37c3ce95301e5ba68f74dd6b2221be08b03d6d8a16e245d25"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.3.3"
+  nepali_utils:
+    dependency: transitive
+    description:
+      name: nepali_utils
+      sha256: "686ac878ca844e0ec264a7c0da6404ab7992db5b9120d3ffe1356a3b1de266f4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.8"
   package_config:
     dependency: transitive
     description:
