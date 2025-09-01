@@ -25,6 +25,10 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    showDialog(context: context, builder: (context) {
+      return Center(child: CircularProgressIndicator());
+    });
+
     try {
       final response = await http.post(
         Uri.parse("http://202.51.3.168:5006/api/v1/auth/login"),
@@ -39,16 +43,19 @@ class _LoginPageState extends State<LoginPage> {
         final data = jsonDecode(response.body);
 
 
+        Navigator.pop(context);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const Dashboard()),
         );
       } else {
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Invalid username or password")),
         );
       }
     } catch (e) {
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
