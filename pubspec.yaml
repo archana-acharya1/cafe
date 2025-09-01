@@ -22,13 +22,15 @@ dependencies:
   cupertino_icons: ^1.0.8
   pdf: ^3.11.0
   printing: ^5.13.2
+  nepali_utils: ^3.0.8
+  nepali_date_picker: ^7.0.1
 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   hive_generator: ^2.0.1
-  build_runner: ^2.5.4
+  build_runner: ^2.4.13
 
  
   flutter_lints: ^6.0.0

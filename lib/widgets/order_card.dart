@@ -7,42 +7,108 @@ import 'dart:math';
 
 class OrderCard extends StatelessWidget {
   final OrderModel order;
+  final Function() onTap;
+  final Function()? onDelete;
+  final Function(OrderModel updatedOrder)? onUpdate;
 
-  const OrderCard({super.key, required this.order});
+  const OrderCard({
+    super.key,
+    required this.order,
+    required this.onTap,
+    this.onDelete,
+    this.onUpdate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Table: ${order.tableName} (${order.area})",
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text("Total: ${order.totalAmount.toStringAsFixed(2)}"),
-            Text("Status: ${order.paymentStatus}"),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                  onPressed: () {
-                    order.paymentStatus = "Paid";
-                    order.save();
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.print),
-                  onPressed: () async {
-                    await _printOrder(order);
-                  },
-                ),
-              ],
-            ),
-          ],
+    final themeColor = const Color(0xFF8B4513); // Coffee Brown
+    final accentColor = const Color(0xFFFF7043); // Warm Orange
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        color: Colors.white,
+        elevation: 3,
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Row: Order ID + Status Chip
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Order #${order.orderId}",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: themeColor)),
+                  Chip(
+                    label: Text(
+                      order.paymentStatus ?? "Unknown",
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: order.paymentStatus == "Paid"
+                        ? Colors.green
+                        : (order.paymentStatus == "Due"
+                        ? Colors.redAccent
+                        : Colors.amber),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+
+              Text("Table: ${order.tableName} (${order.area})",
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 4),
+              Text("Customer: ${order.customerName ?? "Guest"}",
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+              const SizedBox(height: 6),
+              Text("Total: ₹${order.totalAmount.toStringAsFixed(2)}",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: accentColor)),
+              const SizedBox(height: 12),
+
+              // Action Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Tooltip(
+                    message: "Mark as Paid",
+                    child: IconButton(
+                      icon: const Icon(Icons.check_circle, color: Colors.green),
+                      onPressed: () {
+                        order.paymentStatus = "Paid";
+                        onUpdate?.call(order);
+                      },
+                    ),
+                  ),
+                  Tooltip(
+                    message: "Delete Order",
+                    child: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: onDelete,
+                    ),
+                  ),
+                  Tooltip(
+                    message: "Print Bill",
+                    child: IconButton(
+                      icon: Icon(Icons.print, color: themeColor),
+                      onPressed: () async {
+                        await _printOrder(order);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -96,33 +162,6 @@ class OrderCard extends StatelessWidget {
                 dottedDivider(),
                 pw.SizedBox(height: 5),
 
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Expanded(
-                        flex: 5,
-                        child: pw.Text('Description',
-                            style: pw.TextStyle(
-                                fontSize: 8, fontWeight: pw.FontWeight.bold))),
-                    pw.Expanded(
-                        flex: 2,
-                        child: pw.Text('Qty',
-                            textAlign: pw.TextAlign.center,
-                            style: pw.TextStyle(
-                                fontSize: 8, fontWeight: pw.FontWeight.bold))),
-                    pw.Expanded(
-                        flex: 3,
-                        child: pw.Text('Subtotal',
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(
-                                fontSize: 8, fontWeight: pw.FontWeight.bold))),
-                  ],
-                ),
-
-                pw.SizedBox(height: 5),
-                dottedDivider(),
-                pw.SizedBox(height: 10),
-
                 ...order.items.map((item) => pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
@@ -148,7 +187,6 @@ class OrderCard extends StatelessWidget {
                 dottedDivider(),
                 pw.SizedBox(height: 10),
 
-                // Summary
                 _rowText('Total VAT:', vatAmount.toStringAsFixed(2), bold: true),
                 _rowText('Total Discount:', discount.toStringAsFixed(2),
                     bold: true),
