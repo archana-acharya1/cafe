@@ -60,4 +60,28 @@ class OrderModel extends HiveObject {
     this.isCheckedOut = false,
 
   }) : createdAt = createdAt ?? DateTime.now();
+    required this.orderId,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'tableName': tableName,
+      'area': area,
+      'items': items.map((item) => {
+        'itemName': item.itemName,
+        'unitName': item.unitName,
+        'price': item.price,
+        'quantity': item.quantity,
+        'imagePath': item.imagePath,
+      }).toList(),
+      'totalAmount': totalAmount,
+      'paidAmount': paidAmount,
+      'dueAmount': dueAmount,
+      'paymentStatus': paymentStatus,
+      'customerName': customerName,
+      'discount': discount,
+      'taxId': taxId,
+      'orderId': orderId,
+    };
+  }
 }

@@ -59,7 +59,7 @@ class _DashboardState extends State<Dashboard> {
       case 'Tables':
         return const TableScreen();
       case 'New Order':
-        return const OrderScreen();
+        return OrderScreen();
       case 'Orders':
         return const OrdersScreen();
       case 'Home':

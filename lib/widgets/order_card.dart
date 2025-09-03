@@ -75,6 +75,108 @@ class OrderCard extends StatelessWidget {
               ],
             ),
           ],
+  final Function() onTap;
+  final Function()? onDelete;
+  final Function(OrderModel updatedOrder)? onUpdate;
+
+  const OrderCard({
+    super.key,
+    required this.order,
+    required this.onTap,
+    this.onDelete,
+    this.onUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final themeColor = const Color(0xFF8B4513); // Coffee Brown
+    final accentColor = const Color(0xFFFF7043); // Warm Orange
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        color: Colors.white,
+        elevation: 3,
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Row: Order ID + Status Chip
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Order #${order.orderId}",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: themeColor)),
+                  Chip(
+                    label: Text(
+                      order.paymentStatus ?? "Unknown",
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: order.paymentStatus == "Paid"
+                        ? Colors.green
+                        : (order.paymentStatus == "Due"
+                        ? Colors.redAccent
+                        : Colors.amber),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+
+              Text("Table: ${order.tableName} (${order.area})",
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 4),
+              Text("Customer: ${order.customerName ?? "Guest"}",
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+              const SizedBox(height: 6),
+              Text("Total: ₹${order.totalAmount.toStringAsFixed(2)}",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: accentColor)),
+              const SizedBox(height: 12),
+
+              // Action Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Tooltip(
+                    message: "Mark as Paid",
+                    child: IconButton(
+                      icon: const Icon(Icons.check_circle, color: Colors.green),
+                      onPressed: () {
+                        order.paymentStatus = "Paid";
+                        onUpdate?.call(order);
+                      },
+                    ),
+                  ),
+                  Tooltip(
+                    message: "Delete Order",
+                    child: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: onDelete,
+                    ),
+                  ),
+                  Tooltip(
+                    message: "Print Bill",
+                    child: IconButton(
+                      icon: Icon(Icons.print, color: themeColor),
+                      onPressed: () async {
+                        await _printOrder(order);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -178,6 +280,8 @@ class OrderCard extends StatelessWidget {
                 pw.SizedBox(height: 10),
                 _rowText('Total VAT:', vatAmount.toStringAsFixed(2),
                     bold: true),
+
+                _rowText('Total VAT:', vatAmount.toStringAsFixed(2), bold: true),
                 _rowText('Total Discount:', discount.toStringAsFixed(2),
                     bold: true),
                 _rowText('Total:', grandTotal.toStringAsFixed(2), bold: true),

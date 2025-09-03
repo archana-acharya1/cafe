@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
-
+import 'models/orderId_model.dart';
 import 'models/user_model.dart';
 import 'models/item_model.dart';
 import 'models/area_model.dart';
@@ -22,6 +21,7 @@ void main() async {
   Hive.registerAdapter(TableModelAdapter());
   Hive.registerAdapter(OrderModelAdapter());
   Hive.registerAdapter(OrderItemAdapter());
+  Hive.registerAdapter(OrderIdModelAdapter());
 
 
   await Hive.openBox<UserModel>('users');
@@ -30,7 +30,8 @@ void main() async {
   await Hive.openBox<TableModel>('tables');
   await Hive.openBox<OrderModel>('orders');
   await Hive.openBox('settings');
-
+  
+  await Hive.openBox<OrderIdModel>('orderId');
 
   final userBox = Hive.box<UserModel>('users');
   if (userBox.isEmpty) {

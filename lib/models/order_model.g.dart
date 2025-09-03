@@ -30,6 +30,7 @@ class OrderModelAdapter extends TypeAdapter<OrderModel> {
       taxId: fields[9] as int?,
       createdAt: fields[10] as DateTime?,
       isCheckedOut: fields[11] as bool,
+      orderId: fields[10] as int?,
     );
   }
 
@@ -37,6 +38,7 @@ class OrderModelAdapter extends TypeAdapter<OrderModel> {
   void write(BinaryWriter writer, OrderModel obj) {
     writer
       ..writeByte(13)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.tableName)
       ..writeByte(1)
