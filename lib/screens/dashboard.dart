@@ -6,6 +6,7 @@ import 'table_screen.dart';
 import 'items_screen.dart';
 import 'order_screen.dart';
 import 'orders_screen.dart';
+import 'home_screen.dart';
 
 import '../services/backup_restore_service.dart';
 
@@ -25,7 +26,7 @@ class _DashboardState extends State<Dashboard> {
       builder: (ctx) => AlertDialog(
         title: const Text(
           'Logout',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF8B4513)),
         ),
         content: const Text('Are you sure you want to logout?'),
         actions: [
@@ -35,7 +36,7 @@ class _DashboardState extends State<Dashboard> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFFF7043)),
             child: const Text('Yes'),
           ),
         ],
@@ -72,9 +73,16 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final themeColor = const Color(0xFF723819);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Deskgoo Cafe - $selectedMenu"),
+        title: Text("Deskgoo Cafe - $selectedMenu",
+          style: TextStyle(color: Colors.white),
+
+        ), iconTheme: const IconThemeData(
+        color: Colors.white, // all icons white
+      ),
+        backgroundColor: themeColor,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -89,7 +97,7 @@ class _DashboardState extends State<Dashboard> {
             padding: EdgeInsets.zero,
             children: [
               const DrawerHeader(
-                decoration: BoxDecoration(color: Colors.blue),
+                decoration: BoxDecoration(color: Color(0xFF8B4513)),
                 child: Text(
                   'Menu',
                   style: TextStyle(color: Colors.white, fontSize: 24),
@@ -166,15 +174,15 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Widget drawerItem(String title, IconData icon) {
-    bool isSelected = selectedMenu == title;
+    final isSelected = selectedMenu == title;
 
     return ListTile(
-      leading: Icon(icon, color: isSelected ? Colors.blue : null),
+      leading: Icon(icon, color: isSelected ? Color(0xFF8B4513) : null),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.blue : null,
+          color: isSelected ? Color(0xFF8B4513) : null,
         ),
       ),
       selected: isSelected,

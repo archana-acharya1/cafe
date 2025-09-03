@@ -23,12 +23,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: ((didPop) {
-        if (didPop){
-          return;
-        }
-        Navigator.pop(context);
-      }),
+      onPopInvoked: (didPop) {
+        if (!didPop) Navigator.pop(context);
+      },
       child: Scaffold(
         appBar: AppBar(title: const Text("Checkout")),
         body: Padding(
@@ -71,34 +68,73 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
 
               const Spacer(),
-              ElevatedButton(
-                onPressed: () {
-                  double paid = 0;
-                  String? customerName;
 
-                  if (_paymentStatus == "Paid") {
-                    paid = double.tryParse(_paidController.text) ?? order.totalAmount;
-                    order.paidAmount = paid;
-                    order.dueAmount = order.totalAmount - paid;
-                  } else if (_paymentStatus == "Credit") {
-                    order.paidAmount = 0;
-                    order.dueAmount = order.totalAmount;
-                    customerName = _customerNameController.text.trim();
-                    order.customerName = customerName;
-                  }
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey.shade400,
+                      ),
+                      child: const Text("Cancel"),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        order.delete();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Order removed")),
+                        );
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown.shade700,
+                      ),
+                      child: const Text("Complete & Remove"),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        double paid = 0;
+                        String? customerName;
 
-                  order.paymentStatus = _paymentStatus;
+                        if (_paymentStatus == "Paid") {
+                          paid = double.tryParse(_paidController.text) ?? order.totalAmount;
+                          order.paidAmount = paid;
+                          order.dueAmount = order.totalAmount - paid;
+                        } else if (_paymentStatus == "Credit") {
+                          order.paidAmount = 0;
+                          order.dueAmount = order.totalAmount;
+                          customerName = _customerNameController.text.trim();
+                          order.customerName = customerName;
+                        }
 
-                  order.save();
+                        order.paymentStatus = _paymentStatus;
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Checkout completed")),
-                  );
+                        order.isCheckedOut = true;
+                        order.save();
 
-                  Navigator.pop(context);
-                },
-                child: const Text("Complete Checkout"),
-              )
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Order checked out & record kept")),
+                        );
+
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown.shade400,
+                      ),
+                      child: const Text("Complete & Keep Record"),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

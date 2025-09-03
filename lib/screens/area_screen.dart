@@ -167,6 +167,7 @@ class _AreaScreenState extends State<AreaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeColor = const Color(0xFF8B4513);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -174,7 +175,17 @@ class _AreaScreenState extends State<AreaScreen> {
         Navigator.pop(context);
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text("Add Area")),
+
+        appBar: AppBar(
+            title: const Text("Add Area",
+            style: TextStyle(color: Colors.white,
+            fontWeight:  FontWeight.bold),
+            ),
+            centerTitle: true,
+            backgroundColor: themeColor,
+            elevation:2,
+
+        ),
         body: ValueListenableBuilder(
           valueListenable: areaBox.listenable(),
           builder: (context, Box<AreaModel> box, _) {

@@ -1,4 +1,3 @@
-// lib/screens/orders_screen.dart
 import 'package:deskgoo_cafe/screens/order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -21,36 +20,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Prevent back navigation
-        return false;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Orders"),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.filter_list),
-              onPressed: () => _showFilterDialog(context),
-            ),
-          ],
     final themeColor = const Color(0xFF8B4513); // Coffee Brown
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: ((didPop) {
-        if (didPop) return;
-        Navigator.pop(context);
-      }),
+    return WillPopScope(
+      onWillPop: () async => true,
       child: Scaffold(
-        backgroundColor: const Color(0xFFFDF6EC), // Warm cream background
+        backgroundColor: const Color(0xFFFDF6EC),
         appBar: AppBar(
-          title: const Text("Orders",
-              style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            "Orders",
+            style: TextStyle(fontWeight: FontWeight.bold,
+                color: Colors.white),
+          ),
           centerTitle: true,
           backgroundColor: themeColor,
           elevation: 2,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.filter_list,
+              color: Colors.white
+              ),
+              onPressed: () => _showFilterDialog(context),
+            ),
+          ],
         ),
         body: ValueListenableBuilder(
           valueListenable: Hive.box<OrderModel>('orders').listenable(),
@@ -60,9 +52,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 child: Text(
                   "No orders yet",
                   style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500),
+                    color: Colors.grey[600],
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               );
             }
@@ -105,8 +98,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         Text("Due: Rs. ${due.toStringAsFixed(2)}"),
                       ],
                     ),
-                  ),
-                if (fromDate == null && toDate == null)
+                  )
+                else
                   Container(
                     padding: const EdgeInsets.all(8),
                     color: Colors.green.shade50,
@@ -127,37 +120,25 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       return OrderCard(
                         order: order,
                         onCheckout: () async => await _onCheckoutPressed(order),
+                        onUpdate: (updatedOrder) => setState(() {}),
+                        onTap: order.isCheckedOut
+                            ? null
+                            : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => OrderScreen(
+                                order: order,
+                                isEdit: true,
+                              ),
+                            ),
+                          ).then((_) => setState(() {}));
+                        },
                       );
                     }).toList(),
                   ),
                 ),
               ],
-            final keys = box.keys.cast<int>().toList().reversed.toList();
-
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-              itemCount: keys.length,
-              itemBuilder: (context, index) {
-                final key = keys[index];
-                final order = box.get(key)!;
-
-                return OrderCard(
-                  order: order,
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) =>
-                          OrderScreen(order: order, isEdit: true),
-                    ));
-                  },
-                  onDelete: () async {
-                    await box.delete(key);
-                  },
-                  onUpdate: (updatedOrder) async {
-                    await box.put(key, updatedOrder);
-                  },
-                );
-              },
-              separatorBuilder: (context, index) => const SizedBox(height: 4),
             );
           },
         ),
@@ -172,7 +153,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
         return AlertDialog(
           title: const Text("Checkout"),
           content: const Text(
-              "Complete checkout for this order? What would you like to do with the record?"),
+            "Complete checkout for this order? What would you like to do with the record?",
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, _CheckoutAction.cancel),
@@ -196,6 +178,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     if (choice == null || choice == _CheckoutAction.cancel) return;
 
+    // Make table available
     final tableBox = Hive.box<TableModel>('tables');
     for (final t in tableBox.values) {
       if (t.name == order.tableName) {
@@ -206,10 +189,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
     }
 
     if (choice == _CheckoutAction.completeKeep) {
-      order.paymentStatus = "Paid";
-      order.paidAmount = order.totalAmount;
-      order.dueAmount = 0;
-      await order.save();
+      order.isCheckedOut = true;
+      order.save();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Checkout completed, record kept.")),
       );

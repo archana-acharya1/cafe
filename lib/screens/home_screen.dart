@@ -33,12 +33,20 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeColor = const Color(0xFF8B4513);
     final areaBox = Hive.box<AreaModel>('areas');
 
     return WillPopScope(
       onWillPop: () => _onWillPop(context),
       child: Scaffold(
-        appBar: AppBar(title: const Text("Areas")),
+        backgroundColor: const Color(0xFFFDF6EC),
+        appBar: AppBar(title: const Text("Areas",style: TextStyle(fontWeight: FontWeight.bold,
+        color: Colors.white),
+        ),
+          centerTitle: true,
+          backgroundColor: themeColor,
+          elevation: 2,
+        ),
         body: ValueListenableBuilder(
           valueListenable: areaBox.listenable(),
           builder: (context, Box<AreaModel> box, _) {

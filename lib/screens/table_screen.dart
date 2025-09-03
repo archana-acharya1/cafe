@@ -19,10 +19,20 @@ class _TableScreenState extends State<TableScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeColor = const  Color(0xFF8B4520);
     var tableBox = Hive.box<TableModel>('tables');
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Tables")),
+      backgroundColor: const Color(0xFFFDF6EC),
+      appBar: AppBar(
+          title: const Text("Add Tables",
+          style: TextStyle(color: Colors.white,
+          fontWeight: FontWeight.bold),
+          ),
+           centerTitle: true,
+           backgroundColor: themeColor,
+           elevation: 2,
+      ),
       body: ValueListenableBuilder(
         valueListenable: tableBox.listenable(),
         builder: (context, Box<TableModel> box, _) {

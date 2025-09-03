@@ -60,8 +60,7 @@ class OrderModel extends HiveObject {
     this.isCheckedOut = false,
 
   }) : createdAt = createdAt ?? DateTime.now();
-    required this.orderId,
-  });
+
 
   Map<String, dynamic> toMap() {
     return {

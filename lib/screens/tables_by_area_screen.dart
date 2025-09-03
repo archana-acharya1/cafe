@@ -13,11 +13,21 @@ class TablesByAreaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeColor = const Color(0xFF8B4513);
     final tableBox = Hive.box<TableModel>('tables');
     final orderBox = Hive.box<OrderModel>('orders');
 
     return Scaffold(
-      appBar: AppBar(title: Text("Tables in $areaName")),
+      backgroundColor: const Color(0xFFFDF6EC),
+      appBar: AppBar(
+          title: Text("Tables in $areaName",
+           style: TextStyle(fontWeight: FontWeight.bold,
+           color: Colors.white),
+          ),
+        centerTitle: true,
+        backgroundColor: themeColor,
+        elevation: 2,
+      ),
       body: ValueListenableBuilder(
         valueListenable: tableBox.listenable(),
         builder: (context, Box<TableModel> box, _) {
