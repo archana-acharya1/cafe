@@ -18,15 +18,18 @@ class AreaModelAdapter extends TypeAdapter<AreaModel> {
     };
     return AreaModel(
       name: fields[0] as String,
+      imagePath: fields[1] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, AreaModel obj) {
     writer
-      ..writeByte(1)
+      ..writeByte(2)
       ..writeByte(0)
-      ..write(obj.name);
+      ..write(obj.name)
+      ..writeByte(1)
+      ..write(obj.imagePath);
   }
 
   @override

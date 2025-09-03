@@ -1,3 +1,4 @@
+import 'package:deskgoo_cafe/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'area_screen.dart';
@@ -5,6 +6,8 @@ import 'table_screen.dart';
 import 'items_screen.dart';
 import 'order_screen.dart';
 import 'orders_screen.dart';
+
+import '../services/backup_restore_service.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -14,7 +17,7 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  String selectedMenu = 'Items';
+  String selectedMenu = 'Home';
 
   Future<void> _confirmLogout(BuildContext context) async {
     final shouldLogout = await showDialog<bool>(
@@ -59,6 +62,9 @@ class _DashboardState extends State<Dashboard> {
         return OrderScreen();
       case 'Orders':
         return const OrdersScreen();
+      case 'Home':
+        return const HomeScreen();
+
       default:
         return const Center(child: Text('Welcome to Deskgoo Cafe!'));
     }
@@ -89,6 +95,7 @@ class _DashboardState extends State<Dashboard> {
                   style: TextStyle(color: Colors.white, fontSize: 24),
                 ),
               ),
+              drawerItem('Home', Icons.home),
               drawerItem('Items', Icons.fastfood),
               drawerItem('Areas', Icons.location_city),
               drawerItem('Tables', Icons.table_bar),
@@ -99,6 +106,62 @@ class _DashboardState extends State<Dashboard> {
         ),
       ),
       body: getMainContent(),
+
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              icon: const Icon(Icons.backup),
+              label: const Text("Backup"),
+              onPressed: () async {
+                try {
+                  await BackupRestoreService.backupAllHive(
+                      shareAfterCreate: true);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("✅ Backup completed")),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("❌ Backup failed: $e")),
+                  );
+                }
+              },
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.restore),
+              label: const Text("Restore"),
+              onPressed: () async {
+                try {
+                  await BackupRestoreService.restoreFromZip(
+                    boxesToReopen: [
+                      'users',
+                      'items',
+                      'areas',
+                      'tables',
+                      'orders',
+                      'settings'
+                    ],
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("♻️ Restore completed. Please restart app")),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("❌ Restore failed: $e")),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

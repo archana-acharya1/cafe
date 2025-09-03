@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "569277147313",
-    "project_id": "cafe-3fb97",
-    "storage_bucket": "cafe-3fb97.firebasestorage.app"
+    "project_number": "101331170409",
+    "project_id": "archanacafe-13163",
+    "storage_bucket": "archanacafe-13163.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:569277147313:android:9de296b42e29edaeb85a90",
+        "mobilesdk_app_id": "1:101331170409:android:8a5207401a576875239ef8",
         "android_client_info": {
           "package_name": "com.deskgoo.cafe.deskgoo_cafe"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBoZxn-Aw5Xb-HpMmVWqnbQeh4rvnv7tHM"
+          "current_key": "AIzaSyBb4c0cJ1NZbFRttNVXs6KdYB8n-z2rNZc"
         }
       ],
       "services": {

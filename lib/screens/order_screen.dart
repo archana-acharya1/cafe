@@ -11,9 +11,11 @@ import '../models/table_model.dart';
 import '../screens/orders_screen.dart';
 
 class OrderScreen extends StatefulWidget {
+  final String? initialTableName;
+  const OrderScreen({super.key, });
   bool isEdit = false;
   OrderModel? order;
-  OrderScreen({super.key, this.order, this.isEdit = false});
+  OrderScreen({super.key, this.order, this.isEdit = false, this.initialTableName});
 
   @override
   State<OrderScreen> createState() => _OrderScreenState();
@@ -41,6 +43,14 @@ class _OrderScreenState extends State<OrderScreen> {
   void initState() {
     super.initState();
 
+    if (widget.initialTableName != null) {
+      final table = tableBox.values.firstWhere(
+              (t) => t.name == widget.initialTableName,
+          orElse: () =>
+          tableBox.values.isNotEmpty ? tableBox.values.first : TableModel(name: "", area: ""));
+      selectedTable = table.name;
+      selectedArea = table.area;
+      
     if (widget.order != null) {
       order = widget.order;
       selectedTable = order!.tableName;
@@ -62,7 +72,8 @@ class _OrderScreenState extends State<OrderScreen> {
 
     setState(() {
       final idx = orderItems.indexWhere(
-              (o) => o.itemName == item.name && o.unitName == unit.unitName);
+            (o) => o.itemName == item.name && o.unitName == unit.unitName,
+      );
       if (idx != -1) {
         orderItems[idx].quantity += unit.qty;
       } else {
@@ -76,6 +87,24 @@ class _OrderScreenState extends State<OrderScreen> {
       }
     });
   }
+
+  int _getNextOrderId(Box<OrderModel> orderBox) {
+    if (orderBox.isEmpty) return 1;
+
+    // filter out null orderIds
+    final orderIds = orderBox.values
+        .where((o) => o.orderId != null)
+        .map((o) => o.orderId!)
+        .toList();
+
+    if (orderIds.isEmpty) return 1; // all saved orders had null orderId
+
+    final lastOrderId = orderIds.reduce((a, b) => a > b ? a : b);
+
+    return lastOrderId + 1;
+  }
+
+  void _placeOrder() {
 
   Future<int> _getNextOrderId() async {
     final box = Hive.box<OrderIdModel>('orderId');
@@ -93,6 +122,7 @@ class _OrderScreenState extends State<OrderScreen> {
   }
 
   void _updateOrder() async {
+
     if (selectedTable == null || orderItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select table and items")),
@@ -100,6 +130,22 @@ class _OrderScreenState extends State<OrderScreen> {
       return;
     }
 
+    // final orderBox = Hive.box<OrderModel>('orders');
+
+    // generate next orderId
+    final orderBox = Hive.box<OrderModel>('orders');
+    final nextOrderId = _getNextOrderId(orderBox);
+
+    final createdOrder = OrderModel(
+      orderId: nextOrderId,
+      tableName: selectedTable!,
+      area: selectedArea ?? "",
+      items: orderItems,
+      totalAmount: total,
+      paidAmount: paidAmount,
+      dueAmount: due,
+      paymentStatus: paymentStatus,
+      customerName: paymentStatus == "Credit" ? customerName : null,
     final existingOrder = widget.order;
     if (existingOrder != null) {
       existingOrder.tableName = selectedTable!;
@@ -153,14 +199,25 @@ class _OrderScreenState extends State<OrderScreen> {
       ),
     );
 
+
+    orderBox.add(createdOrder);
+
+    // update table status to occupied
+    for (final t in tableBox.values) {
+      if (t.name == selectedTable) {
+        t.status = "Occupied";
+        t.currentOrderId = createdOrder.orderId.toString(); // link table with this order
+        t.save();
+        break;
+      }
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Order #$newOrderId placed successfully!")),
     );
 
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const OrdersScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const OrdersScreen()),
     );
   }
 
@@ -195,6 +252,9 @@ class _OrderScreenState extends State<OrderScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              DropdownButtonFormField<String>(
+                value: selectedTable,
+                hint: const Text("Select Table"),
               SectionHeader(
                   title: "Table Selection", icon: Icons.table_restaurant, color: themeColor),
               const SizedBox(height: 8),
@@ -531,9 +591,7 @@ class _SelectUnitDialogState extends State<_SelectUnitDialog> {
         ],
       ),
       actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel")),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
         ElevatedButton(
           onPressed: selected == null
               ? null

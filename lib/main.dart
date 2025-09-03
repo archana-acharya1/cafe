@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
 import 'models/orderId_model.dart';
 import 'models/user_model.dart';
 import 'models/item_model.dart';
@@ -8,7 +7,6 @@ import 'models/area_model.dart';
 import 'models/table_model.dart';
 import 'models/order_model.dart';
 import 'models/order_item.dart';
-
 
 import 'screens/login_page.dart';
 
@@ -25,17 +23,22 @@ void main() async {
   Hive.registerAdapter(OrderItemAdapter());
   Hive.registerAdapter(OrderIdModelAdapter());
 
+
   await Hive.openBox<UserModel>('users');
   await Hive.openBox<ItemModel>('items');
   await Hive.openBox<AreaModel>('areas');
   await Hive.openBox<TableModel>('tables');
   await Hive.openBox<OrderModel>('orders');
+  await Hive.openBox('settings');
+  
   await Hive.openBox<OrderIdModel>('orderId');
 
   final userBox = Hive.box<UserModel>('users');
   if (userBox.isEmpty) {
     userBox.add(UserModel(username: 'admin', password: '1234'));
   }
+
+
 
   runApp(const MyApp());
 }
@@ -50,5 +53,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 
