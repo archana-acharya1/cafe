@@ -1,4 +1,3 @@
-// import 'package:deskgoo_cafe/models/order_item.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
