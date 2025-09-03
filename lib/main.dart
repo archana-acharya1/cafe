@@ -1,6 +1,6 @@
-// import 'package:deskgoo_cafe/models/order_item.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 
 import 'models/user_model.dart';
 import 'models/item_model.dart';
@@ -9,13 +9,11 @@ import 'models/table_model.dart';
 import 'models/order_model.dart';
 import 'models/order_item.dart';
 
-
 import 'screens/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
-
 
   Hive.registerAdapter(UserModelAdapter());
   Hive.registerAdapter(ItemModelAdapter());
@@ -25,6 +23,7 @@ void main() async {
   Hive.registerAdapter(OrderModelAdapter());
   Hive.registerAdapter(OrderItemAdapter());
 
+
   await Hive.openBox<UserModel>('users');
   await Hive.openBox<ItemModel>('items');
   await Hive.openBox<AreaModel>('areas');
@@ -32,10 +31,13 @@ void main() async {
   await Hive.openBox<OrderModel>('orders');
   await Hive.openBox('settings');
 
+
   final userBox = Hive.box<UserModel>('users');
   if (userBox.isEmpty) {
     userBox.add(UserModel(username: 'admin', password: '1234'));
   }
+
+
 
   runApp(const MyApp());
 }

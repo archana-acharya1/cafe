@@ -17,6 +17,7 @@ class OrderModelAdapter extends TypeAdapter<OrderModel> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return OrderModel(
+      orderId: fields[12] as int?,
       tableName: fields[0] as String,
       area: fields[1] as String,
       items: (fields[2] as List).cast<OrderItem>(),
@@ -28,13 +29,14 @@ class OrderModelAdapter extends TypeAdapter<OrderModel> {
       discount: fields[8] as double?,
       taxId: fields[9] as int?,
       createdAt: fields[10] as DateTime?,
+      isCheckedOut: fields[11] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, OrderModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.tableName)
       ..writeByte(1)
@@ -56,7 +58,11 @@ class OrderModelAdapter extends TypeAdapter<OrderModel> {
       ..writeByte(9)
       ..write(obj.taxId)
       ..writeByte(10)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(11)
+      ..write(obj.isCheckedOut)
+      ..writeByte(12)
+      ..write(obj.orderId);
   }
 
   @override

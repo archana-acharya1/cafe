@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/table_model.dart';
+import '../models/order_model.dart';
 import 'order_screen.dart';
+import '../helpers/table_helpers.dart';
 
 class TablesByAreaScreen extends StatelessWidget {
   final String areaName;
@@ -12,6 +14,7 @@ class TablesByAreaScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tableBox = Hive.box<TableModel>('tables');
+    final orderBox = Hive.box<OrderModel>('orders');
 
     return Scaffold(
       appBar: AppBar(title: Text("Tables in $areaName")),
@@ -36,7 +39,35 @@ class TablesByAreaScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final table = tables[index];
               return InkWell(
-                onTap: () {
+                onTap: () async {
+                  OrderModel? order;
+
+                  if (table.currentOrderId != null) {
+                    final existingOrder =
+                        orderBox.get(table.currentOrderId) as OrderModel?;
+                    if (existingOrder != null && !existingOrder.isCheckedOut) {
+                      order = existingOrder;
+                    }
+                  }
+                  if (order == null) {
+                    final newOrder = OrderModel(
+                        tableName: table.name,
+                        area: table.area,
+                        items: [],
+                        totalAmount: 0,
+                        paidAmount: 0,
+                        dueAmount: 0,
+                        paymentStatus: "Unpaid",
+                    );
+                    final newKey = await orderBox.add(newOrder);
+
+                    table.status = "Occupied";
+                    table.currentOrderId = newKey.toString();
+                    await table.save();
+
+                    order = newOrder;
+                  }
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -56,6 +87,13 @@ class TablesByAreaScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: CircleAvatar(
+                            radius: 8,
+                            backgroundColor: statusColor(table.status),
+                          ),
+                        ),
                         table.imagePath != null
                             ? ClipRRect(
                           borderRadius: BorderRadius.circular(8),

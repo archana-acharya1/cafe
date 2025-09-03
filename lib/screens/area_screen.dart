@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 import '../models/area_model.dart';
 
@@ -27,14 +29,23 @@ class _AreaScreenState extends State<AreaScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             Future<void> pickImage() async {
-              final picked =
-              await _picker.pickImage(source: ImageSource.gallery);
+              final picked = await _picker.pickImage(source: ImageSource.gallery);
               if (picked != null) {
+                final docsDir = await getApplicationDocumentsDirectory();
+                final imagesDir = Directory(p.join(docsDir.path, 'images'));
+                if (!imagesDir.existsSync()) {
+                  imagesDir.createSync(recursive: true);
+                }
+
+                final newPath = p.join(imagesDir.path, p.basename(picked.path));
+                final newFile = await File(picked.path).copy(newPath);
+
                 setModalState(() {
-                  imagePath = picked.path;
+                  imagePath = newFile.path;
                 });
               }
             }
+
 
             void removeImage() {
               setModalState(() {
@@ -143,7 +154,14 @@ class _AreaScreenState extends State<AreaScreen> {
     );
 
     if (confirm == true) {
-      area.delete();
+
+      if ( area.imagePath != null) {
+        final file = File(area.imagePath!);
+        if (await file.exists()){
+          await file.delete();
+        }
+      }
+     await area.delete();
     }
   }
 

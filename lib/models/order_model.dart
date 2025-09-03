@@ -38,8 +38,14 @@ class OrderModel extends HiveObject {
   @HiveField(10)
   DateTime createdAt;
 
+  @HiveField(11)
+  bool isCheckedOut;
+
+  @HiveField(12)
+  int? orderId;
 
   OrderModel({
+    this.orderId = 0,
     required this.tableName,
     required this.area,
     required this.items,
@@ -51,5 +57,7 @@ class OrderModel extends HiveObject {
     this.discount,
     this.taxId,
     DateTime? createdAt,
+    this.isCheckedOut = false,
+
   }) : createdAt = createdAt ?? DateTime.now();
 }

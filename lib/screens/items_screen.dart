@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/item_model.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 class ItemsScreen extends StatefulWidget {
   const ItemsScreen({super.key});
@@ -21,7 +23,8 @@ class _ItemsScreenState extends State<ItemsScreen> {
     bool isAvailable = item?.isAvailable ?? true;
     String? imagePath = item?.imagePath;
 
-    final List<_UnitRow> unitRows = (item?.units ?? [UnitOption(unitName: '', price: 0)])
+    final List<_UnitRow> unitRows =
+    (item?.units ?? [UnitOption(unitName: '', price: 0)])
         .map((u) => _UnitRow(
       nameController: TextEditingController(text: u.unitName),
       priceController: TextEditingController(
@@ -36,13 +39,30 @@ class _ItemsScreenState extends State<ItemsScreen> {
           Future<void> pickImage() async {
             final picked = await _picker.pickImage(source: ImageSource.gallery);
             if (picked != null) {
+              final appDir = await getApplicationDocumentsDirectory();
+              final imagesDir = Directory(p.join(appDir.path, 'item_images'));
+              if (!await imagesDir.exists()) {
+                await imagesDir.create(recursive: true);
+              }
+
+              final fileName = p.basename(picked.path);
+              final savedImage = await File(picked.path).copy(
+                p.join(imagesDir.path, fileName),
+              );
+
               setModalState(() {
-                imagePath = picked.path;
+                imagePath = savedImage.path;
               });
             }
           }
 
           void removeImage() {
+            if (imagePath != null) {
+              final file = File(imagePath!);
+              if (file.existsSync()) {
+                file.deleteSync();
+              }
+            }
             setModalState(() {
               imagePath = null;
             });
@@ -127,7 +147,8 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                 labelText: 'Price',
                               ),
                               keyboardType:
-                              const TextInputType.numberWithOptions(decimal: true),
+                              const TextInputType.numberWithOptions(
+                                  decimal: true),
                             ),
                           ),
                           IconButton(
@@ -154,7 +175,8 @@ class _ItemsScreenState extends State<ItemsScreen> {
                           ),
                           if (imagePath != null)
                             IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
+                              icon:
+                              const Icon(Icons.delete, color: Colors.red),
                               onPressed: removeImage,
                             ),
                         ],
@@ -174,7 +196,9 @@ class _ItemsScreenState extends State<ItemsScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel")),
               ElevatedButton(
                 onPressed: () {
                   final name = nameController.text.trim();
@@ -184,13 +208,19 @@ class _ItemsScreenState extends State<ItemsScreen> {
                   for (final r in unitRows) {
                     final uName = r.nameController.text.trim();
                     final price = double.tryParse(
-                        r.priceController.text.trim().replaceAll(',', '')) ?? 0;
-                    if (uName.isNotEmpty && price > 0) units.add(UnitOption(unitName: uName, price: price));
+                        r.priceController.text
+                            .trim()
+                            .replaceAll(',', '')) ??
+                        0;
+                    if (uName.isNotEmpty && price > 0) {
+                      units.add(UnitOption(unitName: uName, price: price));
+                    }
                   }
 
                   if (units.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Add at least one valid unit.')),
+                      const SnackBar(
+                          content: Text('Add at least one valid unit.')),
                     );
                     return;
                   }
@@ -243,7 +273,13 @@ class _ItemsScreenState extends State<ItemsScreen> {
     );
 
     if (confirm == true) {
-      item.delete();
+      if (item.imagePath != null) {
+        final file = File(item.imagePath!);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+      await item.delete();
     }
   }
 
@@ -254,27 +290,37 @@ class _ItemsScreenState extends State<ItemsScreen> {
       body: ValueListenableBuilder(
         valueListenable: itemsBox.listenable(),
         builder: (context, Box<ItemModel> box, _) {
-          if (box.isEmpty) return const Center(child: Text("No items added yet"));
+          if (box.isEmpty) {
+            return const Center(child: Text("No items added yet"));
+          }
 
           return ListView.builder(
             itemCount: box.length,
             itemBuilder: (context, index) {
               final item = box.getAt(index)!;
-              final unitsLabel = item.units.map((u) => "${u.unitName}: ${u.price.toStringAsFixed(2)}").join("  •  ");
+              final unitsLabel = item.units
+                  .map((u) => "${u.unitName}: ${u.price.toStringAsFixed(2)}")
+                  .join("  •  ");
 
               return Card(
                 child: ListTile(
                   leading: item.imagePath != null
-                      ? Image.file(File(item.imagePath!), width: 50, height: 50, fit: BoxFit.cover)
+                      ? Image.file(File(item.imagePath!),
+                      width: 50, height: 50, fit: BoxFit.cover)
                       : const Icon(Icons.fastfood),
                   title: Text(item.name),
-                  subtitle: Text("${item.isAvailable ? 'Available' : 'Not Available'}\n$unitsLabel"),
+                  subtitle: Text(
+                      "${item.isAvailable ? 'Available' : 'Not Available'}\n$unitsLabel"),
                   isThreeLine: true,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _addOrEditItem(item: item)),
-                      IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteItem(item)),
+                      IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _addOrEditItem(item: item)),
+                      IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteItem(item)),
                     ],
                   ),
                 ),

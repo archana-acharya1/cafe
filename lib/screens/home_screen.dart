@@ -4,6 +4,7 @@ import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/area_model.dart';
 import 'tables_by_area_screen.dart';
+import '../helpers/table_helpers.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -29,6 +30,7 @@ class HomeScreen extends StatelessWidget {
     );
     return shouldExit ?? false;
   }
+
   @override
   Widget build(BuildContext context) {
     final areaBox = Hive.box<AreaModel>('areas');

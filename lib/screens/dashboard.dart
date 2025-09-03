@@ -7,6 +7,8 @@ import 'items_screen.dart';
 import 'order_screen.dart';
 import 'orders_screen.dart';
 
+import '../services/backup_restore_service.dart';
+
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
@@ -104,6 +106,62 @@ class _DashboardState extends State<Dashboard> {
         ),
       ),
       body: getMainContent(),
+
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              icon: const Icon(Icons.backup),
+              label: const Text("Backup"),
+              onPressed: () async {
+                try {
+                  await BackupRestoreService.backupAllHive(
+                      shareAfterCreate: true);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("✅ Backup completed")),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("❌ Backup failed: $e")),
+                  );
+                }
+              },
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.restore),
+              label: const Text("Restore"),
+              onPressed: () async {
+                try {
+                  await BackupRestoreService.restoreFromZip(
+                    boxesToReopen: [
+                      'users',
+                      'items',
+                      'areas',
+                      'tables',
+                      'orders',
+                      'settings'
+                    ],
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("♻️ Restore completed. Please restart app")),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("❌ Restore failed: $e")),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

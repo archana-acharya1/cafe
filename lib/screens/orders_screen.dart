@@ -1,7 +1,10 @@
+// lib/screens/orders_screen.dart
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+
 import '../models/order_model.dart';
+import '../models/table_model.dart';
 import '../widgets/order_card.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -17,12 +20,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvoked: ((didPop) {
-        if (didPop) return;
-        Navigator.pop(context);
-      }),
+    return WillPopScope(
+      onWillPop: () async {
+        // Prevent back navigation
+        return false;
+      },
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Orders"),
@@ -40,19 +42,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
               return const Center(child: Text("No orders yet"));
             }
 
-            // Filter orders
             final orders = box.values.where((order) {
-              if (fromDate != null && order.createdAt.isBefore(fromDate!)) {
-                return false;
+              if (fromDate != null) {
+                final startOfFromDate = DateTime(
+                    fromDate!.year, fromDate!.month, fromDate!.day, 0, 0, 0);
+                if (order.createdAt.isBefore(startOfFromDate)) return false;
               }
-              if (toDate != null && order.createdAt.isAfter(toDate!)) {
-                return false;
+              if (toDate != null) {
+                final endOfToDate = DateTime(
+                    toDate!.year, toDate!.month, toDate!.day, 23, 59, 59);
+                if (order.createdAt.isAfter(endOfToDate)) return false;
               }
               return true;
             }).toList()
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt)); // newest first
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-            // Totals
             double total = orders.fold(0, (sum, o) => sum + o.totalAmount);
             double paid = orders
                 .where((o) => o.paymentStatus == "Paid")
@@ -94,7 +98,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   ),
                 Expanded(
                   child: ListView(
-                    children: orders.map((order) => OrderCard(order: order)).toList(),
+                    children: orders.map((order) {
+                      return OrderCard(
+                        order: order,
+                        onCheckout: () async => await _onCheckoutPressed(order),
+                      );
+                    }).toList(),
                   ),
                 ),
               ],
@@ -103,6 +112,64 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _onCheckoutPressed(OrderModel order) async {
+    final choice = await showDialog<_CheckoutAction>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("Checkout"),
+          content: const Text(
+              "Complete checkout for this order? What would you like to do with the record?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, _CheckoutAction.cancel),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context, _CheckoutAction.completeKeep),
+              child: const Text("Complete & Keep Record"),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.pop(context, _CheckoutAction.completeRemove),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text("Complete & Remove"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (choice == null || choice == _CheckoutAction.cancel) return;
+
+    final tableBox = Hive.box<TableModel>('tables');
+    for (final t in tableBox.values) {
+      if (t.name == order.tableName) {
+        t.status = "Available";
+        await t.save();
+        break;
+      }
+    }
+
+    if (choice == _CheckoutAction.completeKeep) {
+      order.paymentStatus = "Paid";
+      order.paidAmount = order.totalAmount;
+      order.dueAmount = 0;
+      await order.save();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Checkout completed, record kept.")),
+      );
+    } else if (choice == _CheckoutAction.completeRemove) {
+      await order.delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Checkout completed, order removed.")),
+      );
+    }
+
+    setState(() {});
   }
 
   Future<void> _showFilterDialog(BuildContext context) async {
@@ -118,11 +185,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ElevatedButton(
                   child: const Text("Pick From Date (Nepali)"),
                   onPressed: () async {
-                    final picked = await showMaterialDatePicker(
+                    final picked = await showNepaliDatePicker(
                       context: context,
                       initialDate: NepaliDateTime.now(),
-                      firstDate: NepaliDateTime(2070),
-                      lastDate: NepaliDateTime(2090),
+                      firstDate: NepaliDateTime(2070, 1, 1),
+                      lastDate: NepaliDateTime(2090, 12, 30),
                     );
                     if (picked != null) {
                       setState(() {
@@ -134,11 +201,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ElevatedButton(
                   child: const Text("Pick To Date (Nepali)"),
                   onPressed: () async {
-                    final picked = await showMaterialDatePicker(
+                    final picked = await showNepaliDatePicker(
                       context: context,
                       initialDate: NepaliDateTime.now(),
-                      firstDate: NepaliDateTime(2070),
-                      lastDate: NepaliDateTime(2090),
+                      firstDate: NepaliDateTime(2070, 1, 1),
+                      lastDate: NepaliDateTime(2090, 12, 30),
                     );
                     if (picked != null) {
                       setState(() {
@@ -157,9 +224,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       firstDate: DateTime(2020),
                       lastDate: DateTime(2100),
                     );
-                    if (picked != null) {
-                      setState(() => fromDate = picked);
-                    }
+                    if (picked != null) setState(() => fromDate = picked);
                   },
                 ),
                 ElevatedButton(
@@ -171,9 +236,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       firstDate: DateTime(2020),
                       lastDate: DateTime(2100),
                     );
-                    if (picked != null) {
-                      setState(() => toDate = picked);
-                    }
+                    if (picked != null) setState(() => toDate = picked);
                   },
                 ),
               ],
@@ -206,3 +269,5 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return "${date.toString().split(' ')[0]} (BS: ${nepali.year}-${nepali.month}-${nepali.day})";
   }
 }
+
+enum _CheckoutAction { cancel, completeKeep, completeRemove }

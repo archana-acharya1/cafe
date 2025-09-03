@@ -13,9 +13,17 @@ class TableModel extends HiveObject {
   @HiveField(2)
   String? imagePath;
 
+  @HiveField(3)
+  String status;
+
+  @HiveField(4)
+  String? currentOrderId;
+
   TableModel({
     required this.name,
     required this.area,
     this.imagePath,
+    this.status = "Available",
+    this.currentOrderId,
   });
 }

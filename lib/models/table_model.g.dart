@@ -20,19 +20,25 @@ class TableModelAdapter extends TypeAdapter<TableModel> {
       name: fields[0] as String,
       area: fields[1] as String,
       imagePath: fields[2] as String?,
+      status: fields[3] as String,
+      currentOrderId: fields[4] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, TableModel obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
       ..write(obj.area)
       ..writeByte(2)
-      ..write(obj.imagePath);
+      ..write(obj.imagePath)
+      ..writeByte(3)
+      ..write(obj.status)
+      ..writeByte(4)
+      ..write(obj.currentOrderId);
   }
 
   @override

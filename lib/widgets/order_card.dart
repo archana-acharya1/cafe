@@ -7,8 +7,9 @@ import '../models/order_model.dart';
 
 class OrderCard extends StatelessWidget {
   final OrderModel order;
+  final VoidCallback? onCheckout;
 
-  const OrderCard({super.key, required this.order});
+  const OrderCard({super.key, required this.order, this.onCheckout});
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +20,8 @@ class OrderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text("OrderId: ${order.orderId}",
+                style: const TextStyle(fontWeight: FontWeight.bold)),
             Text("Table: ${order.tableName} (${order.area})",
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             Text("Total: ${order.totalAmount.toStringAsFixed(2)}"),
@@ -40,6 +43,35 @@ class OrderCard extends StatelessWidget {
                     await _printOrder(order);
                   },
                 ),
+                if (onCheckout != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6.0),
+                    child: order.isCheckedOut
+                        ? Row(
+                      children: const [
+                        Icon(Icons.verified,
+                            color: Colors.green, size: 18),
+                        SizedBox(width: 4),
+                        Text(
+                          "Checked Out",
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    )
+                        : ElevatedButton(
+                      onPressed: () {
+                        if (onCheckout != null) {
+                          onCheckout!();
+                        }
+                        // order.isCheckedOut = true;
+                        // order.save();
+                      },
+                      child: const Text("Checkout"),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -50,11 +82,9 @@ class OrderCard extends StatelessWidget {
 
   String _generateInvoiceNumber() {
     final settingsBox = Hive.box('settings');
-    int lastInvoice = settingsBox.get('lastInvoiceNumber', defaultValue:1000);
-
+    int lastInvoice = settingsBox.get('lastInvoiceNumber', defaultValue: 1000);
     int newInvoice = lastInvoice + 1;
     settingsBox.put('lastInvoiceNumber', newInvoice);
-
     return "SRN#$newInvoice";
   }
 
@@ -89,18 +119,15 @@ class OrderCard extends StatelessWidget {
                           fontSize: 12, fontWeight: pw.FontWeight.bold)),
                 ),
                 pw.SizedBox(height: 10),
-
                 _rowText('Tax ID:', order.taxId?.toString() ?? "N/A"),
                 _rowText('Invoice:', invoiceNumber),
                 _rowText('Invoice Date:',
                     '${DateTime.now().toString().split('.')[0]}'),
                 _rowText('Customer:', order.customerName ?? "Guest"),
                 _rowText('Table:', '${order.tableName} (${order.area})'),
-
                 pw.SizedBox(height: 5),
                 dottedDivider(),
                 pw.SizedBox(height: 5),
-
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
@@ -123,11 +150,9 @@ class OrderCard extends StatelessWidget {
                                 fontSize: 8, fontWeight: pw.FontWeight.bold))),
                   ],
                 ),
-
                 pw.SizedBox(height: 5),
                 dottedDivider(),
                 pw.SizedBox(height: 10),
-
                 ...order.items.map((item) => pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
@@ -148,20 +173,17 @@ class OrderCard extends StatelessWidget {
                             style: pw.TextStyle(fontSize: 8))),
                   ],
                 )),
-
                 pw.SizedBox(height: 10),
                 dottedDivider(),
                 pw.SizedBox(height: 10),
-
-                _rowText('Total VAT:', vatAmount.toStringAsFixed(2), bold: true),
+                _rowText('Total VAT:', vatAmount.toStringAsFixed(2),
+                    bold: true),
                 _rowText('Total Discount:', discount.toStringAsFixed(2),
                     bold: true),
                 _rowText('Total:', grandTotal.toStringAsFixed(2), bold: true),
-
                 pw.SizedBox(height: 10),
                 dottedDivider(),
                 pw.SizedBox(height: 10),
-
                 pw.Align(
                   alignment: pw.Alignment.center,
                   child: pw.Text('Thank you for visiting!',

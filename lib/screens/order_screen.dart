@@ -38,11 +38,11 @@ class _OrderScreenState extends State<OrderScreen> {
   void initState() {
     super.initState();
 
-    if ( widget.initialTableName !=null) {
+    if (widget.initialTableName != null) {
       final table = tableBox.values.firstWhere(
               (t) => t.name == widget.initialTableName,
-          orElse: () => tableBox.values.isNotEmpty ? tableBox.values.first : TableModel(name: "", area: "")
-      );
+          orElse: () =>
+          tableBox.values.isNotEmpty ? tableBox.values.first : TableModel(name: "", area: ""));
       selectedTable = table.name;
       selectedArea = table.area;
     }
@@ -74,6 +74,22 @@ class _OrderScreenState extends State<OrderScreen> {
     });
   }
 
+  int _getNextOrderId(Box<OrderModel> orderBox) {
+    if (orderBox.isEmpty) return 1;
+
+    // filter out null orderIds
+    final orderIds = orderBox.values
+        .where((o) => o.orderId != null)
+        .map((o) => o.orderId!)
+        .toList();
+
+    if (orderIds.isEmpty) return 1; // all saved orders had null orderId
+
+    final lastOrderId = orderIds.reduce((a, b) => a > b ? a : b);
+
+    return lastOrderId + 1;
+  }
+
   void _placeOrder() {
     if (selectedTable == null || orderItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,27 +98,43 @@ class _OrderScreenState extends State<OrderScreen> {
       return;
     }
 
-    Hive.box<OrderModel>('orders').add(
-      OrderModel(
-        tableName: selectedTable!,
-        area: selectedArea ?? "",
-        items: orderItems,
-        totalAmount: total,
-        paidAmount: paidAmount,
-        dueAmount: due,
-        paymentStatus: paymentStatus,
-        customerName: paymentStatus == "Credit" ? customerName : null,
-      ),
+    // final orderBox = Hive.box<OrderModel>('orders');
+
+    // generate next orderId
+    final orderBox = Hive.box<OrderModel>('orders');
+    final nextOrderId = _getNextOrderId(orderBox);
+
+    final createdOrder = OrderModel(
+      orderId: nextOrderId,
+      tableName: selectedTable!,
+      area: selectedArea ?? "",
+      items: orderItems,
+      totalAmount: total,
+      paidAmount: paidAmount,
+      dueAmount: due,
+      paymentStatus: paymentStatus,
+      customerName: paymentStatus == "Credit" ? customerName : null,
     );
+
+
+    orderBox.add(createdOrder);
+
+    // update table status to occupied
+    for (final t in tableBox.values) {
+      if (t.name == selectedTable) {
+        t.status = "Occupied";
+        t.currentOrderId = createdOrder.orderId.toString(); // link table with this order
+        t.save();
+        break;
+      }
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Order placed successfully!")),
     );
 
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const OrdersScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const OrdersScreen()),
     );
   }
 
@@ -330,9 +362,7 @@ class _SelectUnitDialogState extends State<_SelectUnitDialog> {
         ],
       ),
       actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel")),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
         ElevatedButton(
           onPressed: selected == null
               ? null

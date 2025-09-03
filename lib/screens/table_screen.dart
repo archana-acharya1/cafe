@@ -2,9 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/table_model.dart';
 import '../models/area_model.dart';
-import 'package:image_picker/image_picker.dart';
+import '../helpers/table_helpers.dart';
 
 class TableScreen extends StatefulWidget {
   const TableScreen({super.key});
@@ -31,8 +32,8 @@ class _TableScreenState extends State<TableScreen> {
           return GridView.builder(
             padding: const EdgeInsets.all(12),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 200, // max width of each card
-              childAspectRatio: 0.8,   // width : height ratio
+              maxCrossAxisExtent: 200,
+              childAspectRatio: 0.8,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -51,17 +52,26 @@ class _TableScreenState extends State<TableScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: CircleAvatar(
+                            radius: 8,
+                            backgroundColor: statusColor(table.status),
+                          ),
+                        ),
+
                         table.imagePath != null
                             ? ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.file(
                             File(table.imagePath!),
-                            width: 90,
-                            height: 90,
+                            width: 80,
+                            height: 80,
                             fit: BoxFit.cover,
                           ),
                         )
                             : const Icon(Icons.table_chart, size: 60),
+
                         const SizedBox(height: 6),
                         Text(
                           table.name,
@@ -76,6 +86,7 @@ class _TableScreenState extends State<TableScreen> {
                           style: const TextStyle(fontSize: 12),
                           textAlign: TextAlign.center,
                         ),
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -91,6 +102,25 @@ class _TableScreenState extends State<TableScreen> {
                               icon: const Icon(Icons.delete,
                                   color: Colors.red, size: 20),
                               onPressed: () => _deleteTable(table),
+                            ),
+                            PopupMenuButton<String>(
+                              onSelected: (value) async {
+                                table.status = value;
+                                await table.save();
+                                setState(() {});
+                              },
+                              itemBuilder: (_) => [
+                                const PopupMenuItem(
+                                    value: "Available",
+                                    child: Text("Mark Available")),
+                                const PopupMenuItem(
+                                    value: "Occupied",
+                                    child: Text("Mark Occupied")),
+                                const PopupMenuItem(
+                                    value: "Reserved",
+                                    child: Text("Mark Reserved")),
+                              ],
+                              icon: const Icon(Icons.more_vert, size: 18),
                             ),
                           ],
                         ),
@@ -115,11 +145,13 @@ class _TableScreenState extends State<TableScreen> {
     var areaBox = Hive.box<AreaModel>('areas');
     String? selectedArea = table?.area;
     String? imagePath = table?.imagePath;
+    String status = table?.status ?? "Available";
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
+
           Future<void> pickImage() async {
             final picked = await _picker.pickImage(source: ImageSource.gallery);
             if (picked != null) {
@@ -142,7 +174,8 @@ class _TableScreenState extends State<TableScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red),
                     child: const Text("Yes"),
                   ),
                 ],
@@ -167,6 +200,7 @@ class _TableScreenState extends State<TableScreen> {
                     decoration: const InputDecoration(labelText: "Table Name"),
                   ),
                   const SizedBox(height: 10),
+
                   DropdownButtonFormField<String>(
                     value: selectedArea,
                     hint: const Text("Select Area"),
@@ -181,6 +215,22 @@ class _TableScreenState extends State<TableScreen> {
                     },
                   ),
                   const SizedBox(height: 10),
+
+                  DropdownButtonFormField<String>(
+                    value: status,
+                    items: const [
+                      DropdownMenuItem(
+                          value: "Available", child: Text("Available")),
+                      DropdownMenuItem(
+                          value: "Occupied", child: Text("Occupied")),
+                      DropdownMenuItem(
+                          value: "Reserved", child: Text("Reserved")),
+                    ],
+                    onChanged: (v) => setModalState(() => status = v!),
+                    decoration: const InputDecoration(labelText: "Status"),
+                  ),
+                  const SizedBox(height: 10),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -197,12 +247,13 @@ class _TableScreenState extends State<TableScreen> {
                           if (imagePath != null)
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: confirmRemoveImage, // 🔥 confirmation
+                              onPressed: confirmRemoveImage,
                             ),
                         ],
                       ),
                     ],
                   ),
+
                   if (imagePath != null)
                     Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -217,9 +268,8 @@ class _TableScreenState extends State<TableScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
-              ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel")),
               ElevatedButton(
                 onPressed: () {
                   final name = nameController.text.trim();
@@ -228,13 +278,17 @@ class _TableScreenState extends State<TableScreen> {
                   if (table == null) {
                     Hive.box<TableModel>('tables').add(
                       TableModel(
-                          name: name, area: selectedArea!, imagePath: imagePath),
+                          name: name,
+                          area: selectedArea!,
+                          imagePath: imagePath,
+                          status: status),
                     );
                   } else {
                     table
                       ..name = name
                       ..area = selectedArea!
                       ..imagePath = imagePath
+                      ..status = status
                       ..save();
                   }
                   Navigator.pop(context);
@@ -247,6 +301,7 @@ class _TableScreenState extends State<TableScreen> {
       ),
     );
   }
+
 
   Future<void> _deleteTable(TableModel table) async {
     final confirm = await showDialog<bool>(
@@ -269,6 +324,12 @@ class _TableScreenState extends State<TableScreen> {
     );
 
     if (confirm == true) {
+      if (table.imagePath != null) {
+        final file = File(table.imagePath!);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
       table.delete();
     }
   }
