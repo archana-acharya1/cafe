@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -42,11 +43,14 @@ class OrderCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Order #${order.orderId}",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: themeColor)),
+                  Text(
+                    "Order #${order.orderId}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: themeColor,
+                    ),
+                  ),
                   Chip(
                     label: Text(
                       order.paymentStatus,
@@ -61,19 +65,38 @@ class OrderCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text("Table: ${order.tableName} (${order.area})",
-                  style: const TextStyle(fontWeight: FontWeight.w500)),
+
               const SizedBox(height: 4),
-              Text("Customer: ${order.customerName ?? "Guest"}",
-                  style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+              Text(
+                _formatOrderDate(order.createdAt),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+
               const SizedBox(height: 6),
-              Text("Total: Rs.${order.totalAmount.toStringAsFixed(2)}",
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: accentColor)),
+              Text(
+                "Table: ${order.tableName} (${order.area})",
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Customer: ${order.customerName ?? "Guest"}",
+                style: TextStyle(color: Colors.grey[700], fontSize: 13),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Total: Rs.${order.totalAmount.toStringAsFixed(2)}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: accentColor,
+                ),
+              ),
               const SizedBox(height: 12),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -135,6 +158,21 @@ class OrderCard extends StatelessWidget {
     );
   }
 
+  static String _formatOrderDate(DateTime createdAt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final orderDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+    final formatter = DateFormat('hh:mm a'); // ex: 02:45 PM
+
+    if (orderDate == today) {
+      return "Today at ${formatter.format(createdAt)}";
+    } else if (orderDate == today.subtract(const Duration(days: 1))) {
+      return "Yesterday at ${formatter.format(createdAt)}";
+    } else {
+      return "${DateFormat('yyyy-MM-dd').format(createdAt)} at ${formatter.format(createdAt)}";
+    }
+  }
+
   String _generateInvoiceNumber() {
     final settingsBox = Hive.box('settings');
     int lastInvoice = settingsBox.get('lastInvoiceNumber', defaultValue: 1000);
@@ -143,7 +181,6 @@ class OrderCard extends StatelessWidget {
     return "SRN#$newInvoice";
   }
 
-  /// ✅ Now purely synchronous
   static pw.Page buildOrderPdfPage(OrderModel order) {
     final customPageFormat = PdfPageFormat(
       58 * PdfPageFormat.mm,
