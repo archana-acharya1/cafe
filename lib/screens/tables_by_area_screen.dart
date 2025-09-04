@@ -13,7 +13,7 @@ class TablesByAreaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFF8B4513);
+    final themeColor = const Color(0xFFF57C00);
     final tableBox = Hive.box<TableModel>('tables');
     final orderBox = Hive.box<OrderModel>('orders');
 

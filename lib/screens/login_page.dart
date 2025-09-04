@@ -15,6 +15,8 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
 
+  bool _obscurePassword = true;
+
   Future<void> loginUser() async {
     String username = emailController.text.trim();
     String password = passwordController.text.trim();
@@ -68,11 +70,11 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFF8B4513); // coffee brown
-    final accentColor = const Color(0xFFFF7043); // orange accent
+    final themeColor = const Color(0xFF8B4513);
+    final accentColor = const Color(0xFFFF7043);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF6EC), // warm cream
+      backgroundColor: const Color(0xFFFDF6EC),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -117,10 +119,21 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: passwordController,
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       labelText: "Password",
                       prefixIcon: const Icon(Icons.lock, color: Colors.brown),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.brown,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

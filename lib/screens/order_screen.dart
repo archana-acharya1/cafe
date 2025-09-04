@@ -38,6 +38,7 @@ class _OrderScreenState extends State<OrderScreen> {
   double paidAmount = 0;
   String paymentStatus = "Paid";
   String? customerName;
+  final TextEditingController _paidAmountController = TextEditingController();
 
   double get total =>
       orderItems.fold(0, (sum, item) => sum + (item.price * item.quantity));
@@ -69,7 +70,14 @@ class _OrderScreenState extends State<OrderScreen> {
       paidAmount = order!.paidAmount ?? 0;
       paymentStatus = order!.paymentStatus ?? "Paid";
       orderItems.addAll(order!.items);
+      _paidAmountController.text = paidAmount.toStringAsFixed(2);
     }
+  }
+
+  @override
+  void dispose() {
+    _paidAmountController.dispose();
+    super.dispose();
   }
 
   Future<int> _getNextOrderId() async {
@@ -111,6 +119,14 @@ class _OrderScreenState extends State<OrderScreen> {
         ));
       }
     });
+
+    // update Paid Amount automatically if Paid selected
+    if (paymentStatus == "Paid") {
+      setState(() {
+        paidAmount = total;
+        _paidAmountController.text = total.toStringAsFixed(2);
+      });
+    }
   }
 
   Future<void> _updateOrder() async {
@@ -195,7 +211,7 @@ class _OrderScreenState extends State<OrderScreen> {
     final availableItems =
     itemBox.values.where((i) => i.isAvailable && i.units.isNotEmpty).toList();
 
-    final themeColor = const Color(0xFF8B4513);
+    final themeColor = const Color(0xFFF57C00);
     final accentColor = const Color(0xFFFF7043);
 
     return Scaffold(
@@ -348,6 +364,13 @@ class _OrderScreenState extends State<OrderScreen> {
                               orderItems.remove(o);
                             }
                           });
+                          if (paymentStatus == "Paid") {
+                            setState(() {
+                              paidAmount = total;
+                              _paidAmountController.text =
+                                  total.toStringAsFixed(2);
+                            });
+                          }
                         },
                       ),
                       Text("${o.quantity}",
@@ -359,6 +382,13 @@ class _OrderScreenState extends State<OrderScreen> {
                           setState(() {
                             o.quantity++;
                           });
+                          if (paymentStatus == "Paid") {
+                            setState(() {
+                              paidAmount = total;
+                              _paidAmountController.text =
+                                  total.toStringAsFixed(2);
+                            });
+                          }
                         },
                       ),
                     ],
@@ -380,7 +410,7 @@ class _OrderScreenState extends State<OrderScreen> {
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                     Text(
-                      "₹${total.toStringAsFixed(2)}",
+                      "Rs.${total.toStringAsFixed(2)}",
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -400,10 +430,9 @@ class _OrderScreenState extends State<OrderScreen> {
             ),
             const SizedBox(height: 8),
             TextFormField(
+              controller: _paidAmountController,
               keyboardType:
               const TextInputType.numberWithOptions(decimal: true),
-              initialValue:
-              widget.isEdit ? paidAmount.toStringAsFixed(2) : null,
               decoration: _inputDecoration("Paid Amount"),
               onChanged: (val) {
                 setState(() {
@@ -424,6 +453,13 @@ class _OrderScreenState extends State<OrderScreen> {
               onChanged: (val) {
                 setState(() {
                   paymentStatus = val!;
+                  if (paymentStatus == "Paid") {
+                    paidAmount = total;
+                    _paidAmountController.text = total.toStringAsFixed(2);
+                  } else if (paymentStatus == "Due") {
+                    paidAmount = 0;
+                    _paidAmountController.clear();
+                  }
                 });
               },
             ),

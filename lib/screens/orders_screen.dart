@@ -2,6 +2,8 @@ import 'package:deskgoo_cafe/screens/order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nepali_date_picker/nepali_date_picker.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../models/order_model.dart';
 import '../models/table_model.dart';
@@ -18,28 +20,91 @@ class _OrdersScreenState extends State<OrdersScreen> {
   DateTime? fromDate;
   DateTime? toDate;
 
+  // Selection state
+  bool selectionMode = false;
+  final Set<dynamic> _selectedKeys = {}; // uses Hive keys (dynamic)
+
+  // Helpers for selection
+  void _enterSelectionWith(dynamic key) {
+    setState(() {
+      selectionMode = true;
+      _selectedKeys.add(key);
+    });
+  }
+
+  void _toggleSelection(dynamic key) {
+    setState(() {
+      if (_selectedKeys.contains(key)) {
+        _selectedKeys.remove(key);
+        if (_selectedKeys.isEmpty) selectionMode = false;
+      } else {
+        _selectedKeys.add(key);
+      }
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedKeys.clear();
+      selectionMode = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFF8B4513); // Coffee Brown
+    final themeColor = const Color(0xFFF57C00);
 
     return WillPopScope(
-      onWillPop: () async => true,
+      onWillPop: () async {
+        if (selectionMode) {
+          _clearSelection();
+          return false;
+        }
+        return true;
+      },
       child: Scaffold(
         backgroundColor: const Color(0xFFFDF6EC),
         appBar: AppBar(
-          title: const Text(
+          title: selectionMode
+              ? Text(
+            "${_selectedKeys.length} selected",
+            style:
+            const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          )
+              : const Text(
             "Orders",
-            style: TextStyle(fontWeight: FontWeight.bold,
-                color: Colors.white),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           centerTitle: true,
           backgroundColor: themeColor,
           elevation: 2,
-          actions: [
+          leading: selectionMode
+              ? IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: _clearSelection,
+          )
+              : null,
+          actions: selectionMode
+              ? [
             IconButton(
-              icon: const Icon(Icons.filter_list,
-              color: Colors.white
-              ),
+              tooltip: "Select All (visible)",
+              icon: const Icon(Icons.select_all, color: Colors.white),
+              onPressed: () => _selectAllVisible(),
+            ),
+            IconButton(
+              tooltip: "Print Selected",
+              icon: const Icon(Icons.print, color: Colors.white),
+              onPressed: () => _printSelected(),
+            ),
+            IconButton(
+              tooltip: "Checkout Selected",
+              icon: const Icon(Icons.check_circle, color: Colors.white),
+              onPressed: () => _checkoutSelected(),
+            ),
+          ]
+              : [
+            IconButton(
+              icon: const Icon(Icons.filter_list, color: Colors.white),
               onPressed: () => _showFilterDialog(context),
             ),
           ],
@@ -60,82 +125,113 @@ class _OrdersScreenState extends State<OrdersScreen> {
               );
             }
 
-            final orders = box.values.where((order) {
+            // Apply filter to box.values
+            final filtered = box.values.where((order) {
               if (fromDate != null) {
-                final startOfFromDate = DateTime(
-                    fromDate!.year, fromDate!.month, fromDate!.day, 0, 0, 0);
+                final startOfFromDate =
+                DateTime(fromDate!.year, fromDate!.month, fromDate!.day, 0, 0, 0);
                 if (order.createdAt.isBefore(startOfFromDate)) return false;
               }
               if (toDate != null) {
-                final endOfToDate = DateTime(
-                    toDate!.year, toDate!.month, toDate!.day, 23, 59, 59);
+                final endOfToDate =
+                DateTime(toDate!.year, toDate!.month, toDate!.day, 23, 59, 59);
                 if (order.createdAt.isAfter(endOfToDate)) return false;
               }
               return true;
             }).toList()
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-            double total = orders.fold(0, (sum, o) => sum + o.totalAmount);
-            double paid = orders
+            // Summary values
+            final double total =
+            filtered.fold(0.0, (sum, o) => sum + o.totalAmount);
+            final double paid = filtered
                 .where((o) => o.paymentStatus == "Paid")
-                .fold(0, (sum, o) => sum + o.totalAmount);
-            double due = total - paid;
+                .fold(0.0, (sum, o) => sum + o.totalAmount);
+            final double due = total - paid;
 
             return Column(
               children: [
+                // Summary banner (All Time or Filtered range)
                 if (fromDate != null || toDate != null)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.blueGrey.shade50,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("From: ${_formatDate(fromDate)}"),
-                        Text("To: ${_formatDate(toDate)}"),
-                        const SizedBox(height: 8),
-                        Text("Total: Rs. ${total.toStringAsFixed(2)}"),
-                        Text("Paid: Rs. ${paid.toStringAsFixed(2)}"),
-                        Text("Due: Rs. ${due.toStringAsFixed(2)}"),
-                      ],
-                    ),
+                  _SummaryPanel.filtered(
+                    fromDate: fromDate,
+                    toDate: toDate,
+                    total: total,
+                    paid: paid,
+                    due: due,
                   )
                 else
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.green.shade50,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Showing All Time Transactions"),
-                        const SizedBox(height: 8),
-                        Text("Total: Rs. ${total.toStringAsFixed(2)}"),
-                        Text("Paid: Rs. ${paid.toStringAsFixed(2)}"),
-                        Text("Due: Rs. ${due.toStringAsFixed(2)}"),
-                      ],
-                    ),
+                  _SummaryPanel.allTime(
+                    total: total,
+                    paid: paid,
+                    due: due,
                   ),
+
                 Expanded(
-                  child: ListView(
-                    children: orders.map((order) {
-                      return OrderCard(
-                        order: order,
-                        onCheckout: () async => await _onCheckoutPressed(order),
-                        onUpdate: (updatedOrder) => setState(() {}),
-                        onTap: order.isCheckedOut
-                            ? null
-                            : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => OrderScreen(
-                                order: order,
-                                isEdit: true,
+                  child: ListView.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final order = filtered[index];
+                      final isSelected = _selectedKeys.contains(order.key);
+
+                      return GestureDetector(
+                        onLongPress: () => _enterSelectionWith(order.key),
+                        onTap: () {
+                          if (selectionMode) {
+                            _toggleSelection(order.key);
+                            return;
+                          }
+                          // default tap: open order if not checked out
+                          if (!order.isCheckedOut) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => OrderScreen(order: order, isEdit: true),
                               ),
-                            ),
-                          ).then((_) => setState(() {}));
+                            ).then((_) => setState(() {}));
+                          }
                         },
+                        child: Stack(
+                          children: [
+                            // The visual card
+                            OrderCard(
+                              order: order,
+                              onCheckout: () async => await _onCheckoutPressed(order),
+                              onUpdate: (updated) => setState(() {}),
+                              onTap: () {}, // handled by GestureDetector above
+                            ),
+                            // Selection overlay
+                            if (isSelected)
+                              Positioned(
+                                top: 10,
+                                right: 20,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.9),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.check, color: Colors.white, size: 18),
+                                ),
+                              ),
+                            if (selectionMode && !isSelected)
+                              Positioned(
+                                top: 10,
+                                right: 20,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.9),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.grey.shade400),
+                                  ),
+                                  child: const Icon(Icons.check, color: Colors.grey, size: 18),
+                                ),
+                              ),
+                          ],
+                        ),
                       );
-                    }).toList(),
+                    },
                   ),
                 ),
               ],
@@ -146,6 +242,133 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
+  // ===================== MULTI-PRINT =====================
+  Future<void> _printSelected() async {
+    if (_selectedKeys.isEmpty) return;
+
+    final ordersBox = Hive.box<OrderModel>('orders');
+    final List<OrderModel> selectedOrders = ordersBox.values
+        .where((o) => _selectedKeys.contains(o.key))
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt)); // print oldest->newest, optional
+
+    final doc = pw.Document();
+    for (final o in selectedOrders) {
+      doc.addPage(OrderCard.buildOrderPdfPage(o)); // sync helper
+    }
+    await Printing.layoutPdf(onLayout: (format) async => doc.save());
+
+    // keep selection (sometimes you might want to clear)
+    // _clearSelection();
+  }
+
+  // ===================== MULTI-CHECKOUT =====================
+  Future<void> _checkoutSelected() async {
+    if (_selectedKeys.isEmpty) return;
+
+    final choice = await showDialog<_BulkAction>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("Checkout ${_selectedKeys.length} selected?"),
+        content: const Text(
+          "Choose what to do with the checked-out orders:\n\n"
+              "• Complete & Keep: marks as checked-out and keeps records.\n"
+              "• Complete & Remove: deletes orders after checkout.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, _BulkAction.cancel),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, _BulkAction.keep),
+            child: const Text("Complete & Keep"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, _BulkAction.remove),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Complete & Remove"),
+          ),
+        ],
+      ),
+    );
+
+    if (choice == null || choice == _BulkAction.cancel) return;
+
+    final tableBox = Hive.box<TableModel>('tables');
+    final ordersBox = Hive.box<OrderModel>('orders');
+
+    // Mark related tables "Available"
+    for (final t in tableBox.values) {
+      // we’ll toggle later per order when matched
+      // (done below to avoid O(n*m)). A quick map for speed:
+    }
+    // Build quick lookup for tables by name
+    final Map<String, TableModel> tableByName = {
+      for (final t in tableBox.values) t.name: t
+    };
+
+    // Apply to each selected order
+    final List<OrderModel> toProcess = ordersBox.values
+        .where((o) => _selectedKeys.contains(o.key))
+        .toList();
+
+    for (final o in toProcess) {
+      // mark table available
+      final tbl = tableByName[o.tableName];
+      if (tbl != null) {
+        tbl.status = "Available";
+        await tbl.save();
+      }
+
+      if (choice == _BulkAction.keep) {
+        if (!o.isCheckedOut) {
+          o.isCheckedOut = true;
+          await o.save();
+        }
+      } else if (choice == _BulkAction.remove) {
+        await o.delete();
+      }
+    }
+
+    if (choice == _BulkAction.keep) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Checkout completed. Kept ${toProcess.length} record(s).")),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Checkout completed. Removed ${toProcess.length} order(s).")),
+      );
+    }
+
+    _clearSelection();
+    setState(() {});
+  }
+
+  // Select all currently visible (filtered) orders
+  void _selectAllVisible() {
+    final box = Hive.box<OrderModel>('orders');
+    final visibleKeys = box.values.where((order) {
+      if (fromDate != null) {
+        final startOfFromDate =
+        DateTime(fromDate!.year, fromDate!.month, fromDate!.day, 0, 0, 0);
+        if (order.createdAt.isBefore(startOfFromDate)) return false;
+      }
+      if (toDate != null) {
+        final endOfToDate =
+        DateTime(toDate!.year, toDate!.month, toDate!.day, 23, 59, 59);
+        if (order.createdAt.isAfter(endOfToDate)) return false;
+      }
+      return true;
+    }).map((o) => o.key);
+
+    setState(() {
+      selectionMode = true;
+      _selectedKeys.addAll(visibleKeys);
+    });
+  }
+
+  // ===================== SINGLE CHECKOUT (unchanged logic) =====================
   Future<void> _onCheckoutPressed(OrderModel order) async {
     final choice = await showDialog<_CheckoutAction>(
       context: context,
@@ -161,13 +384,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
               child: const Text("Cancel"),
             ),
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(context, _CheckoutAction.completeKeep),
+              onPressed: () => Navigator.pop(context, _CheckoutAction.completeKeep),
               child: const Text("Complete & Keep Record"),
             ),
             ElevatedButton(
-              onPressed: () =>
-                  Navigator.pop(context, _CheckoutAction.completeRemove),
+              onPressed: () => Navigator.pop(context, _CheckoutAction.completeRemove),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text("Complete & Remove"),
             ),
@@ -204,6 +425,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     setState(() {});
   }
 
+  // ===================== FILTER DIALOG (same UX you had) =====================
   Future<void> _showFilterDialog(BuildContext context) async {
     await showDialog(
       context: context,
@@ -294,12 +516,102 @@ class _OrdersScreenState extends State<OrdersScreen> {
       },
     );
   }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return "-";
-    final nepali = NepaliDateTime.fromDateTime(date);
-    return "${date.toString().split(' ')[0]} (BS: ${nepali.year}-${nepali.month}-${nepali.day})";
-  }
 }
 
 enum _CheckoutAction { cancel, completeKeep, completeRemove }
+enum _BulkAction { cancel, keep, remove }
+
+class _SummaryPanel extends StatelessWidget {
+  final bool filtered;
+  final DateTime? fromDate;
+  final DateTime? toDate;
+  final double total;
+  final double paid;
+  final double due;
+
+  const _SummaryPanel._({
+    required this.filtered,
+    required this.fromDate,
+    required this.toDate,
+    required this.total,
+    required this.paid,
+    required this.due,
+    super.key,
+  });
+
+  factory _SummaryPanel.allTime({
+    required double total,
+    required double paid,
+    required double due,
+  }) {
+    return _SummaryPanel._(
+      filtered: false,
+      fromDate: null,
+      toDate: null,
+      total: total,
+      paid: paid,
+      due: due,
+    );
+  }
+
+  factory _SummaryPanel.filtered({
+    required DateTime? fromDate,
+    required DateTime? toDate,
+    required double total,
+    required double paid,
+    required double due,
+  }) {
+    return _SummaryPanel._(
+      filtered: true,
+      fromDate: fromDate,
+      toDate: toDate,
+      total: total,
+      paid: paid,
+      due: due,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = filtered ? Colors.blueGrey.shade50 : Colors.green.shade50;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      color: bg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (filtered) ...[
+            Text("From: ${_fmt(fromDate)}"),
+            Text("To: ${_fmt(toDate)}"),
+            const SizedBox(height: 6),
+          ] else ...[
+            const Text(
+              "Showing All Time Transactions",
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+          ],
+          Wrap(
+            spacing: 16,
+            runSpacing: 4,
+            children: [
+              Text("Total: Rs. ${total.toStringAsFixed(2)}"),
+              Text("Paid: Rs. ${paid.toStringAsFixed(2)}"),
+              Text("Due: Rs. ${due.toStringAsFixed(2)}"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _fmt(DateTime? d) {
+    if (d == null) return "-";
+    final yyyy = d.year.toString().padLeft(4, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    final dd = d.day.toString().padLeft(2, '0');
+    return "$yyyy-$mm-$dd";
+  }
+}

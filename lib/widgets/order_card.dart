@@ -23,7 +23,7 @@ class OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFF8B4513);
+    final themeColor = const Color(0xFFF57C00);
     final accentColor = const Color(0xFFFF7043);
 
     return InkWell(
@@ -62,24 +62,21 @@ class OrderCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-
               Text("Table: ${order.tableName} (${order.area})",
                   style: const TextStyle(fontWeight: FontWeight.w500)),
               const SizedBox(height: 4),
               Text("Customer: ${order.customerName ?? "Guest"}",
                   style: TextStyle(color: Colors.grey[700], fontSize: 13)),
               const SizedBox(height: 6),
-              Text("Total: ₹${order.totalAmount.toStringAsFixed(2)}",
+              Text("Total: Rs.${order.totalAmount.toStringAsFixed(2)}",
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                       color: accentColor)),
               const SizedBox(height: 12),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  // Payment tick button
                   Tooltip(
                     message: order.paymentStatus == "Paid"
                         ? "Payment Completed"
@@ -100,7 +97,6 @@ class OrderCard extends StatelessWidget {
                       },
                     ),
                   ),
-
                   if (onDelete != null)
                     Tooltip(
                       message: "Delete Order",
@@ -109,18 +105,15 @@ class OrderCard extends StatelessWidget {
                         onPressed: onDelete,
                       ),
                     ),
-
-
                   Tooltip(
                     message: "Print Bill",
                     child: IconButton(
                       icon: Icon(Icons.print, color: themeColor),
                       onPressed: () async {
-                        await _printOrder(order);
+                        await _printSingleOrder(order);
                       },
                     ),
                   ),
-
                   if (onCheckout != null)
                     order.isCheckedOut
                         ? ElevatedButton(
@@ -150,89 +143,93 @@ class OrderCard extends StatelessWidget {
     return "SRN#$newInvoice";
   }
 
-  Future<void> _printOrder(OrderModel order) async {
-    final pdf = pw.Document();
-
+  /// ✅ Now purely synchronous
+  static pw.Page buildOrderPdfPage(OrderModel order) {
     final customPageFormat = PdfPageFormat(
       58 * PdfPageFormat.mm,
       double.infinity,
       marginAll: 1 * PdfPageFormat.mm,
     );
 
-    final invoiceNumber = _generateInvoiceNumber();
+    final invoiceNumber =
+        "SRN#${DateTime.now().millisecondsSinceEpoch % 100000}";
+
     final vatAmount = order.totalAmount * 0.13;
     final discount = order.discount ?? 0;
     final grandTotal = order.totalAmount + vatAmount - discount;
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: customPageFormat,
-        build: (pw.Context context) {
-          return pw.SizedBox(
-            width: 58 * PdfPageFormat.mm,
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Align(
-                  alignment: pw.Alignment.center,
-                  child: pw.Text('Deskgoo Cafe',
-                      style: pw.TextStyle(
-                          fontSize: 12, fontWeight: pw.FontWeight.bold)),
-                ),
-                pw.SizedBox(height: 10),
-                _rowText('Invoice:', invoiceNumber),
-                _rowText('Invoice Date:',
-                    '${DateTime.now().toString().split('.')[0]}'),
-                _rowText('Customer:', order.customerName ?? "Guest"),
-                _rowText('Table:', '${order.tableName} (${order.area})'),
-                pw.SizedBox(height: 5),
-                dottedDivider(),
-                pw.SizedBox(height: 5),
-                ...order.items.map((item) => pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Expanded(
-                        flex: 5,
-                        child: pw.Text(item.itemName,
-                            style: pw.TextStyle(fontSize: 8))),
-                    pw.Expanded(
-                        flex: 2,
-                        child: pw.Text('${item.quantity}',
-                            textAlign: pw.TextAlign.center,
-                            style: pw.TextStyle(fontSize: 8))),
-                    pw.Expanded(
-                        flex: 3,
-                        child: pw.Text(
-                            (item.price * item.quantity).toStringAsFixed(2),
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(fontSize: 8))),
-                  ],
-                )),
-                pw.SizedBox(height: 10),
-                dottedDivider(),
-                pw.SizedBox(height: 10),
-                _rowText('Total VAT:', vatAmount.toStringAsFixed(2), bold: true),
-                _rowText('Total Discount:', discount.toStringAsFixed(2), bold: true),
-                _rowText('Total:', grandTotal.toStringAsFixed(2), bold: true),
-                pw.SizedBox(height: 10),
-                dottedDivider(),
-                pw.Align(
-                  alignment: pw.Alignment.center,
-                  child: pw.Text('Thank you for visiting!',
-                      style: pw.TextStyle(
-                          fontSize: 9, fontStyle: pw.FontStyle.italic)),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+    return pw.Page(
+      pageFormat: customPageFormat,
+      build: (pw.Context context) {
+        return pw.SizedBox(
+          width: 58 * PdfPageFormat.mm,
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.Text('Deskgoo Cafe',
+                    style: pw.TextStyle(
+                        fontSize: 12, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(height: 10),
+              _rowText('Invoice:', invoiceNumber),
+              _rowText('Invoice Date:',
+                  '${DateTime.now().toString().split('.')[0]}'),
+              _rowText('Customer:', order.customerName ?? "Guest"),
+              _rowText('Table:', '${order.tableName} (${order.area})'),
+              pw.SizedBox(height: 5),
+              dottedDivider(),
+              pw.SizedBox(height: 5),
+              ...order.items.map((item) => pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Expanded(
+                      flex: 5,
+                      child: pw.Text(item.itemName,
+                          style: pw.TextStyle(fontSize: 8))),
+                  pw.Expanded(
+                      flex: 2,
+                      child: pw.Text('${item.quantity}',
+                          textAlign: pw.TextAlign.center,
+                          style: pw.TextStyle(fontSize: 8))),
+                  pw.Expanded(
+                      flex: 3,
+                      child: pw.Text(
+                          (item.price * item.quantity).toStringAsFixed(2),
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(fontSize: 8))),
+                ],
+              )),
+              pw.SizedBox(height: 10),
+              dottedDivider(),
+              pw.SizedBox(height: 10),
+              _rowText('Total VAT:', vatAmount.toStringAsFixed(2), bold: true),
+              _rowText('Total Discount:', discount.toStringAsFixed(2),
+                  bold: true),
+              _rowText('Total:', grandTotal.toStringAsFixed(2), bold: true),
+              pw.SizedBox(height: 10),
+              dottedDivider(),
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.Text('Thank you for visiting!',
+                    style: pw.TextStyle(
+                        fontSize: 9, fontStyle: pw.FontStyle.italic)),
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
 
+  Future<void> _printSingleOrder(OrderModel order) async {
+    final pdf = pw.Document();
+    pdf.addPage(OrderCard.buildOrderPdfPage(order));
     await Printing.layoutPdf(onLayout: (format) async => pdf.save());
   }
 
-  pw.Widget _rowText(String label, String value, {bool bold = false}) {
+  static pw.Widget _rowText(String label, String value, {bool bold = false}) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
@@ -248,7 +245,7 @@ class OrderCard extends StatelessWidget {
     );
   }
 
-  pw.Widget dottedDivider() {
+  static pw.Widget dottedDivider() {
     return pw.LayoutBuilder(
       builder: (context, constraints) {
         final dashWidth = 2.0;

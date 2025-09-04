@@ -19,7 +19,7 @@ class _TableScreenState extends State<TableScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const  Color(0xFF8B4520);
+    final themeColor = const  Color(0xFFF57C00);
     var tableBox = Hive.box<TableModel>('tables');
 
     return Scaffold(

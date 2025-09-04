@@ -288,7 +288,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const  Color(0xFF8B4520);
+    final themeColor = const Color(0xFFF57C00);
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6EC),
       appBar: AppBar(
@@ -316,7 +316,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
             itemBuilder: (context, index) {
               final item = box.getAt(index)!;
               final unitsLabel = item.units
-                  .map((u) => "${u.unitName}: ₹${u.price.toStringAsFixed(2)}")
+                  .map((u) => "${u.unitName}: Rs.${u.price.toStringAsFixed(2)}")
                   .join("  •  ");
 
               return Card(

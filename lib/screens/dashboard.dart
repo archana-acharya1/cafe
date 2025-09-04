@@ -73,7 +73,7 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFF723819);
+    final themeColor = const Color(0xFFFF7043);
     return Scaffold(
       appBar: AppBar(
         title: Text("Deskgoo Cafe - $selectedMenu",
@@ -97,7 +97,7 @@ class _DashboardState extends State<Dashboard> {
             padding: EdgeInsets.zero,
             children: [
               const DrawerHeader(
-                decoration: BoxDecoration(color: Color(0xFF8B4513)),
+                decoration: BoxDecoration(color: Color(0xFFFF7043)),
                 child: Text(
                   'Menu',
                   style: TextStyle(color: Colors.white, fontSize: 24),
@@ -177,12 +177,12 @@ class _DashboardState extends State<Dashboard> {
     final isSelected = selectedMenu == title;
 
     return ListTile(
-      leading: Icon(icon, color: isSelected ? Color(0xFF8B4513) : null),
+      leading: Icon(icon, color: isSelected ? Color(0xFFF57C00) : null),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Color(0xFF8B4513) : null,
+          color: isSelected ? Color(0xFFF57C00) : null,
         ),
       ),
       selected: isSelected,

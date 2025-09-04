@@ -33,7 +33,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFF8B4513);
+    final themeColor = const Color(0xFFF57C00);
     final areaBox = Hive.box<AreaModel>('areas');
 
     return WillPopScope(

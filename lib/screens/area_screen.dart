@@ -167,7 +167,7 @@ class _AreaScreenState extends State<AreaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = const Color(0xFF8B4513);
+    final themeColor = const Color(0xFFF57C00);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
