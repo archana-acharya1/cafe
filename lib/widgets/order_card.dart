@@ -5,13 +5,13 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/order_model.dart';
+import '../screens/order_screen.dart';
 
 class OrderCard extends StatelessWidget {
   final OrderModel order;
   final VoidCallback? onCheckout;
   final VoidCallback? onDelete;
   final Function(OrderModel updatedOrder)? onUpdate;
-  final VoidCallback? onTap;
 
   const OrderCard({
     super.key,
@@ -19,7 +19,6 @@ class OrderCard extends StatelessWidget {
     this.onCheckout,
     this.onDelete,
     this.onUpdate,
-    this.onTap,
   });
 
   @override
@@ -29,7 +28,19 @@ class OrderCard extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
+      onTap: () {
+        if (!order.isCheckedOut) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OrderScreen(
+                order: order,
+                isEdit: true,
+              ),
+            ),
+          );
+        }
+      },
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         color: Colors.white,
@@ -40,6 +51,7 @@ class OrderCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Order header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -97,6 +109,7 @@ class OrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
+              // Actions
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -162,7 +175,7 @@ class OrderCard extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final orderDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
-    final formatter = DateFormat('hh:mm a'); // ex: 02:45 PM
+    final formatter = DateFormat('hh:mm a');
 
     if (orderDate == today) {
       return "Today at ${formatter.format(createdAt)}";

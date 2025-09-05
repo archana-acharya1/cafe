@@ -268,9 +268,6 @@ class _OrderScreenState extends State<OrderScreen> {
                 itemCount: availableItems.length,
                 itemBuilder: (context, index) {
                   final item = availableItems[index];
-                  final units = item.units
-                      .map((u) => "${u.unitName} (${u.price.toStringAsFixed(2)})")
-                      .join(" • ");
 
                   return Container(
                     width: 180,
@@ -306,7 +303,11 @@ class _OrderScreenState extends State<OrderScreen> {
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15)),
-                              Text(units,
+                              Text(
+                                  item.units
+                                      .map((u) =>
+                                  "${u.unitName} (${u.price.toStringAsFixed(2)})")
+                                      .join(" • "),
                                   style: TextStyle(
                                       fontSize: 12, color: Colors.grey[700])),
                             ],

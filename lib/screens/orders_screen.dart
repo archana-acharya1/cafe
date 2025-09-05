@@ -68,12 +68,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
           title: selectionMode
               ? Text(
             "${_selectedKeys.length} selected",
-            style:
-            const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white),
           )
               : const Text(
             "Orders",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white),
           ),
           centerTitle: true,
           backgroundColor: themeColor,
@@ -142,8 +143,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
             // Summary values
-            final double total =
-            filtered.fold(0.0, (sum, o) => sum + o.totalAmount);
+            final double total = filtered.fold(0.0, (sum, o) => sum + o.totalAmount);
             final double paid = filtered
                 .where((o) => o.paymentStatus == "Paid")
                 .fold(0.0, (sum, o) => sum + o.totalAmount);
@@ -181,26 +181,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             _toggleSelection(order.key);
                             return;
                           }
-                          // default tap: open order if not checked out
                           if (!order.isCheckedOut) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => OrderScreen(order: order, isEdit: true),
+                                builder: (_) =>
+                                    OrderScreen(order: order, isEdit: true),
                               ),
                             ).then((_) => setState(() {}));
                           }
                         },
                         child: Stack(
                           children: [
-                            // The visual card
                             OrderCard(
                               order: order,
                               onCheckout: () async => await _onCheckoutPressed(order),
                               onUpdate: (updated) => setState(() {}),
-                              onTap: () {}, // handled by GestureDetector above
+                              // onTap: () {},
                             ),
-                            // Selection overlay
                             if (isSelected)
                               Positioned(
                                 top: 10,
@@ -211,7 +209,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     color: Colors.green.withOpacity(0.9),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.check, color: Colors.white, size: 18),
+                                  child: const Icon(Icons.check,
+                                      color: Colors.white, size: 18),
                                 ),
                               ),
                             if (selectionMode && !isSelected)
@@ -225,7 +224,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     shape: BoxShape.circle,
                                     border: Border.all(color: Colors.grey.shade400),
                                   ),
-                                  child: const Icon(Icons.check, color: Colors.grey, size: 18),
+                                  child: const Icon(Icons.check,
+                                      color: Colors.grey, size: 18),
                                 ),
                               ),
                           ],
@@ -242,6 +242,63 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
+  // ===================== SINGLE CHECKOUT =====================
+  Future<void> _onCheckoutPressed(OrderModel order) async {
+    final choice = await showDialog<_CheckoutAction>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("Checkout"),
+          content: const Text(
+              "Complete checkout for this order? What would you like to do with the record?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, _CheckoutAction.cancel),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context, _CheckoutAction.completeKeep),
+              child: const Text("Complete & Keep Record"),
+            ),
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.pop(context, _CheckoutAction.completeRemove),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text("Complete & Remove"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (choice == null || choice == _CheckoutAction.cancel) return;
+
+    final tableBox = Hive.box<TableModel>('tables');
+    for (final t in tableBox.values) {
+      if (t.name == order.tableName) {
+        t.status = "Available";
+        await t.save();
+        break;
+      }
+    }
+
+    if (choice == _CheckoutAction.completeKeep) {
+      order.isCheckedOut = true;
+      await order.save();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Checkout completed, record kept.")),
+      );
+    } else if (choice == _CheckoutAction.completeRemove) {
+      await order.delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Checkout completed, order removed.")),
+      );
+    }
+
+    setState(() {});
+  }
+
   // ===================== MULTI-PRINT =====================
   Future<void> _printSelected() async {
     if (_selectedKeys.isEmpty) return;
@@ -250,16 +307,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final List<OrderModel> selectedOrders = ordersBox.values
         .where((o) => _selectedKeys.contains(o.key))
         .toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt)); // print oldest->newest, optional
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     final doc = pw.Document();
     for (final o in selectedOrders) {
-      doc.addPage(OrderCard.buildOrderPdfPage(o)); // sync helper
+      doc.addPage(OrderCard.buildOrderPdfPage(o));
     }
     await Printing.layoutPdf(onLayout: (format) async => doc.save());
-
-    // keep selection (sometimes you might want to clear)
-    // _clearSelection();
   }
 
   // ===================== MULTI-CHECKOUT =====================
@@ -271,10 +325,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
       builder: (_) => AlertDialog(
         title: Text("Checkout ${_selectedKeys.length} selected?"),
         content: const Text(
-          "Choose what to do with the checked-out orders:\n\n"
-              "• Complete & Keep: marks as checked-out and keeps records.\n"
-              "• Complete & Remove: deletes orders after checkout.",
-        ),
+            "Choose what to do with the checked-out orders:\n\n"
+                "• Complete & Keep: marks as checked-out and keeps records.\n"
+                "• Complete & Remove: deletes orders after checkout."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, _BulkAction.cancel),
@@ -298,23 +351,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final tableBox = Hive.box<TableModel>('tables');
     final ordersBox = Hive.box<OrderModel>('orders');
 
-    // Mark related tables "Available"
-    for (final t in tableBox.values) {
-      // we’ll toggle later per order when matched
-      // (done below to avoid O(n*m)). A quick map for speed:
-    }
     // Build quick lookup for tables by name
-    final Map<String, TableModel> tableByName = {
-      for (final t in tableBox.values) t.name: t
-    };
+    final Map<String, TableModel> tableByName = {for (final t in tableBox.values) t.name: t};
 
-    // Apply to each selected order
-    final List<OrderModel> toProcess = ordersBox.values
-        .where((o) => _selectedKeys.contains(o.key))
-        .toList();
+    final List<OrderModel> toProcess =
+    ordersBox.values.where((o) => _selectedKeys.contains(o.key)).toList();
 
     for (final o in toProcess) {
-      // mark table available
       final tbl = tableByName[o.tableName];
       if (tbl != null) {
         tbl.status = "Available";
@@ -368,64 +411,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     });
   }
 
-  // ===================== SINGLE CHECKOUT (unchanged logic) =====================
-  Future<void> _onCheckoutPressed(OrderModel order) async {
-    final choice = await showDialog<_CheckoutAction>(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text("Checkout"),
-          content: const Text(
-            "Complete checkout for this order? What would you like to do with the record?",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, _CheckoutAction.cancel),
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, _CheckoutAction.completeKeep),
-              child: const Text("Complete & Keep Record"),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, _CheckoutAction.completeRemove),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text("Complete & Remove"),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (choice == null || choice == _CheckoutAction.cancel) return;
-
-    // Make table available
-    final tableBox = Hive.box<TableModel>('tables');
-    for (final t in tableBox.values) {
-      if (t.name == order.tableName) {
-        t.status = "Available";
-        await t.save();
-        break;
-      }
-    }
-
-    if (choice == _CheckoutAction.completeKeep) {
-      order.isCheckedOut = true;
-      order.save();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Checkout completed, record kept.")),
-      );
-    } else if (choice == _CheckoutAction.completeRemove) {
-      await order.delete();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Checkout completed, order removed.")),
-      );
-    }
-
-    setState(() {});
-  }
-
-  // ===================== FILTER DIALOG (same UX you had) =====================
+  // ===================== FILTER DIALOG =====================
   Future<void> _showFilterDialog(BuildContext context) async {
     await showDialog(
       context: context,
