@@ -20,11 +20,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
   DateTime? fromDate;
   DateTime? toDate;
 
-  // Selection state
   bool selectionMode = false;
-  final Set<dynamic> _selectedKeys = {}; // uses Hive keys (dynamic)
+  final Set<dynamic> _selectedKeys = {};
 
-  // Helpers for selection
   void _enterSelectionWith(dynamic key) {
     setState(() {
       selectionMode = true;
@@ -126,7 +124,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
               );
             }
 
-            // Apply filter to box.values
             final filtered = box.values.where((order) {
               if (fromDate != null) {
                 final startOfFromDate =
@@ -142,7 +139,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
             }).toList()
               ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-            // Summary values
             final double total = filtered.fold(0.0, (sum, o) => sum + o.totalAmount);
             final double paid = filtered
                 .where((o) => o.paymentStatus == "Paid")
@@ -151,7 +147,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
             return Column(
               children: [
-                // Summary banner (All Time or Filtered range)
                 if (fromDate != null || toDate != null)
                   _SummaryPanel.filtered(
                     fromDate: fromDate,
@@ -197,7 +192,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               order: order,
                               onCheckout: () async => await _onCheckoutPressed(order),
                               onUpdate: (updated) => setState(() {}),
-                              // onTap: () {},
                             ),
                             if (isSelected)
                               Positioned(
@@ -242,7 +236,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  // ===================== SINGLE CHECKOUT =====================
+  Future<String?> _askPaymentMethod() async {
+    return await showDialog<String>(
+        context: context,
+        builder: (_) => SimpleDialog(
+          title: const Text("Select Payment Method"),
+          children: [
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, "Cash"),
+              child: const Text("Cash"),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, "Mobile Bankling"),
+              child: const Text("Mobile Banking"),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, "Card"),
+              child: const Text("Card"),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, "Other"),
+              child: const Text("Other"),
+            ),
+          ],
+        ),
+    );
+  }
+
   Future<void> _onCheckoutPressed(OrderModel order) async {
     final choice = await showDialog<_CheckoutAction>(
       context: context,
@@ -274,6 +294,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     if (choice == null || choice == _CheckoutAction.cancel) return;
 
+    final paymentMethod = await _askPaymentMethod();
+    if (paymentMethod == null) return;
+
     final tableBox = Hive.box<TableModel>('tables');
     for (final t in tableBox.values) {
       if (t.name == order.tableName) {
@@ -285,6 +308,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     if (choice == _CheckoutAction.completeKeep) {
       order.isCheckedOut = true;
+      order.paymentStatus = "Paid";
+      order.paymentMethod = paymentMethod;
       await order.save();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Checkout completed, record kept.")),
@@ -316,7 +341,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
     await Printing.layoutPdf(onLayout: (format) async => doc.save());
   }
 
-  // ===================== MULTI-CHECKOUT =====================
   Future<void> _checkoutSelected() async {
     if (_selectedKeys.isEmpty) return;
 
@@ -350,35 +374,45 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     final tableBox = Hive.box<TableModel>('tables');
     final ordersBox = Hive.box<OrderModel>('orders');
-
-    // Build quick lookup for tables by name
-    final Map<String, TableModel> tableByName = {for (final t in tableBox.values) t.name: t};
+    final Map<String, TableModel> tableByName = {
+      for (final t in tableBox.values) t.name: t
+    };
 
     final List<OrderModel> toProcess =
     ordersBox.values.where((o) => _selectedKeys.contains(o.key)).toList();
 
-    for (final o in toProcess) {
-      final tbl = tableByName[o.tableName];
-      if (tbl != null) {
-        tbl.status = "Available";
-        await tbl.save();
-      }
+    if (choice == _BulkAction.keep) {
+      final method = await _askPaymentMethod();
+      if (method == null) return;
 
-      if (choice == _BulkAction.keep) {
+      for (final o in toProcess) {
+        final tbl = tableByName[o.tableName];
+        if (tbl != null) {
+          tbl.status = "Available";
+          await tbl.save();
+        }
+
         if (!o.isCheckedOut) {
           o.isCheckedOut = true;
+          o.paymentStatus = "Paid";
+          o.paymentMethod = method;
           await o.save();
         }
-      } else if (choice == _BulkAction.remove) {
-        await o.delete();
       }
-    }
 
-    if (choice == _BulkAction.keep) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Checkout completed. Kept ${toProcess.length} record(s).")),
       );
-    } else {
+    } else if (choice == _BulkAction.remove) {
+      for (final o in toProcess) {
+        final tbl = tableByName[o.tableName];
+        if (tbl != null) {
+          tbl.status = "Available";
+          await tbl.save();
+        }
+        await o.delete();
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Checkout completed. Removed ${toProcess.length} order(s).")),
       );
@@ -388,7 +422,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     setState(() {});
   }
 
-  // Select all currently visible (filtered) orders
+
   void _selectAllVisible() {
     final box = Hive.box<OrderModel>('orders');
     final visibleKeys = box.values.where((order) {
@@ -411,7 +445,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
     });
   }
 
-  // ===================== FILTER DIALOG =====================
   Future<void> _showFilterDialog(BuildContext context) async {
     await showDialog(
       context: context,

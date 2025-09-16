@@ -1,3 +1,4 @@
+import 'package:deskgoo_cafe/models/stock_model.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/orderId_model.dart';
@@ -9,6 +10,7 @@ import 'models/order_model.dart';
 import 'models/order_item.dart';
 
 import 'screens/login_page.dart';
+import 'screens/stock_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +24,7 @@ void main() async {
   Hive.registerAdapter(OrderModelAdapter());
   Hive.registerAdapter(OrderItemAdapter());
   Hive.registerAdapter(OrderIdModelAdapter());
+  Hive.registerAdapter(StockModelAdapter());
 
 
   await Hive.openBox<UserModel>('users');
@@ -32,6 +35,7 @@ void main() async {
   await Hive.openBox('settings');
   
   await Hive.openBox<OrderIdModel>('orderId');
+  await Hive.openBox<StockModel>('stocks');
 
   final userBox = Hive.box<UserModel>('users');
   if (userBox.isEmpty) {

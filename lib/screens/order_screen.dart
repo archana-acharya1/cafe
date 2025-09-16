@@ -38,7 +38,13 @@ class _OrderScreenState extends State<OrderScreen> {
   double paidAmount = 0;
   String paymentStatus = "Paid";
   String? customerName;
+  String? note;
+
   final TextEditingController _paidAmountController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
+
+  final TextEditingController _searchController = TextEditingController();
+  String searchQuery = "";
 
   double get total =>
       orderItems.fold(0, (sum, item) => sum + (item.price * item.quantity));
@@ -49,7 +55,12 @@ class _OrderScreenState extends State<OrderScreen> {
   void initState() {
     super.initState();
 
-    // Pre-select table if provided
+    _searchController.addListener(() {
+      setState(() {
+        searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+
     if (widget.initialTableName != null) {
       final table = tableBox.values.firstWhere(
             (t) => t.name == widget.initialTableName,
@@ -61,7 +72,6 @@ class _OrderScreenState extends State<OrderScreen> {
       selectedArea = table.area;
     }
 
-    // Load existing order if editing
     if (widget.order != null) {
       order = widget.order;
       selectedTable = order!.tableName;
@@ -69,14 +79,18 @@ class _OrderScreenState extends State<OrderScreen> {
       customerName = order!.customerName;
       paidAmount = order!.paidAmount ?? 0;
       paymentStatus = order!.paymentStatus ?? "Paid";
+      note = order!.note;
       orderItems.addAll(order!.items);
       _paidAmountController.text = paidAmount.toStringAsFixed(2);
+      _noteController.text = note ?? "";
     }
   }
 
   @override
   void dispose() {
     _paidAmountController.dispose();
+    _noteController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -120,7 +134,6 @@ class _OrderScreenState extends State<OrderScreen> {
       }
     });
 
-    // update Paid Amount automatically if Paid selected
     if (paymentStatus == "Paid") {
       setState(() {
         paidAmount = total;
@@ -148,6 +161,9 @@ class _OrderScreenState extends State<OrderScreen> {
       existingOrder.paymentStatus = paymentStatus;
       existingOrder.customerName =
       paymentStatus == "Credit" ? customerName : null;
+      existingOrder.note = _noteController.text.trim().isNotEmpty
+          ? _noteController.text.trim()
+          : null;
 
       await existingOrder.save();
 
@@ -183,11 +199,13 @@ class _OrderScreenState extends State<OrderScreen> {
       dueAmount: due,
       paymentStatus: paymentStatus,
       customerName: paymentStatus == "Credit" ? customerName : null,
+      note: _noteController.text.trim().isNotEmpty
+          ? _noteController.text.trim()
+          : null,
     );
 
     Hive.box<OrderModel>('orders').add(createdOrder);
 
-    // update table status
     for (final t in tableBox.values) {
       if (t.name == selectedTable) {
         t.status = "Occupied";
@@ -206,10 +224,17 @@ class _OrderScreenState extends State<OrderScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
-    final availableItems =
-    itemBox.values.where((i) => i.isAvailable && i.units.isNotEmpty).toList();
+    final availableItems = itemBox.values
+        .where((i) =>
+    i.isAvailable &&
+        i.units.isNotEmpty &&
+        (searchQuery.isEmpty ||
+            i.name.toLowerCase().contains(searchQuery)))
+        .toList();
+
 
     final themeColor = const Color(0xFFF57C00);
     final accentColor = const Color(0xFFFF7043);
@@ -253,7 +278,18 @@ class _OrderScreenState extends State<OrderScreen> {
               },
             ),
 
-            // ⚡ Available Items
+            const SizedBox(height: 20),
+            SectionHeader(
+                title: "SearchItems",
+                icon: Icons.search,
+                color: themeColor,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _searchController,
+              decoration: _inputDecoration("Search for items..."),
+            ),
+
             const SizedBox(height: 20),
             SectionHeader(
               title: "Available Items",
@@ -263,7 +299,9 @@ class _OrderScreenState extends State<OrderScreen> {
             const SizedBox(height: 8),
             SizedBox(
               height: 230,
-              child: ListView.builder(
+              child: availableItems.isEmpty
+                  ?const Center(child: Text("No items found"))
+               : ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: availableItems.length,
                 itemBuilder: (context, index) {
@@ -291,10 +329,11 @@ class _OrderScreenState extends State<OrderScreen> {
                                       ? Image.file(File(item.imagePath!),
                                       width: double.infinity,
                                       fit: BoxFit.cover)
-                                      : Container(
+                                   : Container(
                                     color: Colors.grey[200],
                                     child: const Icon(Icons.fastfood,
-                                        size: 48, color: Colors.grey),
+                                        size: 48,
+                                        color: Colors.grey),
                                   ),
                                 ),
                               ),
@@ -320,7 +359,6 @@ class _OrderScreenState extends State<OrderScreen> {
               ),
             ),
 
-            // ⚡ Order Items
             if (orderItems.isNotEmpty) ...[
               const SizedBox(height: 20),
               SectionHeader(
@@ -422,7 +460,6 @@ class _OrderScreenState extends State<OrderScreen> {
               ),
             ],
 
-            // ⚡ Payment Section
             const SizedBox(height: 20),
             SectionHeader(
               title: "Payment",
@@ -473,6 +510,19 @@ class _OrderScreenState extends State<OrderScreen> {
                   onChanged: (val) => setState(() => customerName = val),
                 ),
               ),
+            const SizedBox(height: 20),
+            SectionHeader(
+              title: "Special Note (Optional)",
+              icon: Icons.note_alt,
+              color: themeColor,
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _noteController,
+              maxLines: 3,
+              decoration: _inputDecoration("Add a note (e.g. extra cheese, spicy, etc.)"),
+            ),
+
             const SizedBox(height: 80),
           ],
         ),
@@ -566,28 +616,27 @@ class _SelectUnitDialogState extends State<_SelectUnitDialog> {
         children: [
           DropdownButtonFormField<UnitOption>(
             value: selected,
-            items: widget.item.units
-                .map((u) => DropdownMenuItem(
-              value: u,
-              child: Text("${u.unitName} (${u.price.toStringAsFixed(2)})"),
-            ))
-                .toList(),
-            onChanged: (val) => setState(() => selected = val),
+            items: widget.item.units.map((u) {
+              return DropdownMenuItem(value: u, child: Text(u.unitName));
+            }).toList(),
+            onChanged: (u) => setState(() => selected = u),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text("Qty"),
-              const SizedBox(width: 10),
               IconButton(
-                icon: const Icon(Icons.remove),
-                onPressed: () => setState(() {
-                  if (qty > 1) qty--;
-                }),
+                icon: const Icon(Icons.remove_circle),
+                onPressed: () {
+                  if (qty > 1) {
+                    setState(() => qty--);
+                  }
+                },
               ),
-              Text("$qty"),
+              Text(qty.toString(),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               IconButton(
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add_circle),
                 onPressed: () => setState(() => qty++),
               ),
             ],
@@ -595,20 +644,22 @@ class _SelectUnitDialogState extends State<_SelectUnitDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel")),
         ElevatedButton(
           onPressed: selected == null
               ? null
-              : () => Navigator.pop(
-            context,
-            _ChosenUnit(
-              unitName: selected!.unitName,
-              price: selected!.price,
-              qty: qty,
-            ),
-          ),
+              : () {
+            Navigator.pop(
+                context,
+                _ChosenUnit(
+                    unitName: selected!.unitName,
+                    price: selected!.price,
+                    qty: qty));
+          },
           child: const Text("Add"),
-        ),
+        )
       ],
     );
   }
@@ -618,10 +669,5 @@ class _ChosenUnit {
   final String unitName;
   final double price;
   final int qty;
-
-  _ChosenUnit({
-    required this.unitName,
-    required this.price,
-    required this.qty,
-  });
+  _ChosenUnit({required this.unitName, required this.price, required this.qty});
 }

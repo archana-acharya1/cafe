@@ -44,6 +44,12 @@ class OrderModel extends HiveObject {
   @HiveField(12)
   int? orderId;
 
+  @HiveField(13)
+  String? paymentMethod;
+
+  @HiveField(14)
+  String? note;
+
   OrderModel({
     this.orderId = 0,
     required this.tableName,
@@ -58,9 +64,9 @@ class OrderModel extends HiveObject {
     this.taxId,
     DateTime? createdAt,
     this.isCheckedOut = false,
-
+    this.paymentMethod,
+    this.note,
   }) : createdAt = createdAt ?? DateTime.now();
-
 
   Map<String, dynamic> toMap() {
     return {
@@ -81,6 +87,8 @@ class OrderModel extends HiveObject {
       'discount': discount,
       'taxId': taxId,
       'orderId': orderId,
+      'paymentMethod': paymentMethod,
+      'note': note,
     };
   }
 }

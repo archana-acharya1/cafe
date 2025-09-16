@@ -51,7 +51,6 @@ class OrderCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Order header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -107,6 +106,20 @@ class OrderCard extends StatelessWidget {
                   color: accentColor,
                 ),
               ),
+
+              if (order.paymentStatus == "Paid" && order.paymentMethod != null)
+                Padding(
+                    padding: const EdgeInsets.only(top: 6.0),
+                  child: Text(
+                    "Payment Method: ${order.paymentMethod}",
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+
               const SizedBox(height: 12),
 
               // Actions

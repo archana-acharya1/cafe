@@ -1,4 +1,5 @@
 import 'package:deskgoo_cafe/screens/home_screen.dart';
+import 'package:deskgoo_cafe/screens/stock_screen.dart';
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'area_screen.dart';
@@ -65,6 +66,8 @@ class _DashboardState extends State<Dashboard> {
         return const OrdersScreen();
       case 'Home':
         return const HomeScreen();
+      case 'Stock':
+        return const StockScreen();
 
       default:
         return const Center(child: Text('Welcome to Deskgoo Cafe!'));
@@ -109,6 +112,7 @@ class _DashboardState extends State<Dashboard> {
               drawerItem('Tables', Icons.table_bar),
               drawerItem('New Order', Icons.add_shopping_cart),
               drawerItem('Orders', Icons.receipt),
+              drawerItem('Stock', Icons.inventory),
             ],
           ),
         ),
