@@ -19,6 +19,14 @@ class _AreaScreenState extends State<AreaScreen> {
   final Box<AreaModel> areaBox = Hive.box<AreaModel>('areas');
   final ImagePicker _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+  }
+
+
+
+
   void _addOrEditArea({AreaModel? area}) {
     final nameController = TextEditingController(text: area?.name ?? '');
     String? imagePath = area?.imagePath;
@@ -261,7 +269,8 @@ class _AreaScreenState extends State<AreaScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           child: const Icon(Icons.add),
-          onPressed: () => _addOrEditArea(),
+          // onPressed: () => _addOrEditArea(),
+          onPressed: () async => _addOrEditArea(),
         ),
       ),
     );

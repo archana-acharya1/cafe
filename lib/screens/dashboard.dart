@@ -7,6 +7,7 @@ import 'table_screen.dart';
 import 'items_screen.dart';
 import 'order_screen.dart';
 import 'orders_screen.dart';
+import 'manage_user_screen.dart';
 import 'home_screen.dart';
 
 import '../services/backup_restore_service.dart';

@@ -26,4 +26,12 @@ class OrderItem extends HiveObject {
     required this.quantity,
     this.imagePath,
   });
+
+  Map<String, dynamic> toJson() => {
+    'itemName': itemName,
+    'unitName': unitName,
+    'price': price,
+    'quantity': quantity,
+    'imagePath': imagePath,
+  };
 }

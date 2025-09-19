@@ -32,15 +32,23 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = true;
     });
 
+    final body = {
+      "username": username,
+      "password": password,
+    };
+
+
     try {
+      debugPrint('$body');
       final response = await http.post(
         Uri.parse("http://202.51.3.168:5006/api/v1/auth/login"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "username": username,
-          "password": password,
-        }),
+        body: jsonEncode(body),
       );
+      debugPrint('$body');
+
+      debugPrint('${response.statusCode}');
+      debugPrint('${response.body}');
 
       setState(() {
         isLoading = false;
@@ -62,6 +70,7 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         isLoading = false;
       });
+      debugPrint('Error = $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
@@ -146,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: isLoading ? null : loginUser,
+                      onPressed: () async => loginUser(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accentColor,
                         shape: RoundedRectangleBorder(
