@@ -10,5 +10,8 @@ class UserModel {
   @HiveField(1)
   final String password;
 
-  UserModel({required this.username, required this.password});
+  UserModel({
+    required this.username,
+    required this.password,
+  });
 }

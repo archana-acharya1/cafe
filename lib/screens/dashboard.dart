@@ -8,8 +8,6 @@ import 'items_screen.dart';
 import 'order_screen.dart';
 import 'orders_screen.dart';
 import 'manage_user_screen.dart';
-import 'home_screen.dart';
-
 import '../services/backup_restore_service.dart';
 
 class Dashboard extends StatefulWidget {
@@ -69,7 +67,6 @@ class _DashboardState extends State<Dashboard> {
         return const HomeScreen();
       case 'Stock':
         return const StockScreen();
-
       default:
         return const Center(child: Text('Welcome to Deskgoo Cafe!'));
     }
@@ -78,20 +75,22 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     final themeColor = const Color(0xFFFF7043);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Deskgoo Cafe - $selectedMenu",
-          style: TextStyle(color: Colors.white),
-
-        ), iconTheme: const IconThemeData(
-        color: Colors.white, // all icons white
-      ),
+        title: Text(
+          "Deskgoo Cafe - $selectedMenu",
+          style: const TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ),
         backgroundColor: themeColor,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _confirmLogout(context),
-          )
+          ),
         ],
       ),
       drawer: SizedBox(
@@ -119,7 +118,6 @@ class _DashboardState extends State<Dashboard> {
         ),
       ),
       body: getMainContent(),
-
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
@@ -130,8 +128,7 @@ class _DashboardState extends State<Dashboard> {
               label: const Text("Backup"),
               onPressed: () async {
                 try {
-                  await BackupRestoreService.backupAllHive(
-                      shareAfterCreate: true);
+                  await BackupRestoreService.backupAllHive(shareAfterCreate: true);
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("✅ Backup completed")),
@@ -162,12 +159,13 @@ class _DashboardState extends State<Dashboard> {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text("♻️ Restore completed. Please restart app")),
+                      content: Text("Restore completed. Please restart app"),
+                    ),
                   );
                 } catch (e) {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("❌ Restore failed: $e")),
+                    SnackBar(content: Text(" Restore failed: $e")),
                   );
                 }
               },
@@ -180,14 +178,13 @@ class _DashboardState extends State<Dashboard> {
 
   Widget drawerItem(String title, IconData icon) {
     final isSelected = selectedMenu == title;
-
     return ListTile(
-      leading: Icon(icon, color: isSelected ? Color(0xFFF57C00) : null),
+      leading: Icon(icon, color: isSelected ? const Color(0xFFF57C00) : null),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Color(0xFFF57C00) : null,
+          color: isSelected ? const Color(0xFFF57C00) : null,
         ),
       ),
       selected: isSelected,

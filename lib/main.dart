@@ -33,7 +33,7 @@ void main() async {
   await Hive.openBox<TableModel>('tables');
   await Hive.openBox<OrderModel>('orders');
   await Hive.openBox('settings');
-  
+
   await Hive.openBox<OrderIdModel>('orderId');
   await Hive.openBox<StockModel>('stocks');
 
@@ -57,4 +57,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
 import '../models/area_model.dart';
 import '../models/item_model.dart';
 import '../models/table_model.dart';
@@ -22,7 +21,7 @@ class ApiService {
         "Content-Type": "application/json",
       },
     );
-    
+
     print(response.statusCode);
     print(response.body);
 
@@ -85,7 +84,8 @@ class ApiService {
     }
   }
 
-  static Future<OrderResponseModel> createOrder(String token, Map<String, dynamic> orderData) async {
+  static Future<OrderResponseModel> createOrder(
+      String token, Map<String, dynamic> orderData) async {
     final response = await http.post(
       Uri.parse('$baseUrl/orders'),
       headers: {
